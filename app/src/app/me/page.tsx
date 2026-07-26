@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { mockQuests, getQuestById } from "@/data/mock-quests";
+import { realQuests, getQuestById } from "@/data/real-quests";
 import { mockMember } from "@/data/mock-member";
 import { remainingLevel5Quests } from "@/domain/progress";
 import { buildStrategyPaths } from "@/domain/optimizer";
@@ -7,20 +7,27 @@ import { readRealMeFile } from "@/lib/real-me";
 
 export default function MyStrategyPage() {
   const member = mockMember;
-  const remaining = remainingLevel5Quests(mockQuests, member);
-  const strategies = buildStrategyPaths(mockQuests, member);
+  const remaining = remainingLevel5Quests(realQuests, member);
+  const strategies = buildStrategyPaths(realQuests, member);
   const realMe = readRealMeFile();
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-8">
       <h1 className="text-lg font-semibold">내 전략</h1>
-      <p className="mt-1 text-sm text-neutral-500">mock 데이터 · {member.displayName} 기준</p>
+      <p className="mt-1 text-sm text-neutral-500">
+        과제 카탈로그는 실제 데이터 · 진행 상태는 {member.displayName}(데모 페르소나) 기준
+      </p>
 
-      {realMe && (
+      {realMe ? (
         <div className="mt-3 rounded-sm border border-violet-200 bg-violet-50 px-3 py-2 text-xs text-violet-800">
           실제 연동 데이터 감지됨 (수집 {realMe.collectedAt}) — 응답 필드 매핑은 아직 검증 전이라 아래 화면에는
           반영하지 않았다. <code>scripts/collect-me.mjs</code>가 <code>data/private/me.json</code>에 원본을
           저장해두었으니, 필드 구조 확인 후 Member 어댑터를 연결한다.
+        </div>
+      ) : (
+        <div className="mt-3 rounded-sm border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs text-neutral-500">
+          본인 데이터로 바꾸려면: <code>cp .env.example .env</code> 후 CODYSSEY_SESSION 값을 채우고{" "}
+          <code>node scripts/collect-me.mjs</code> 실행.
         </div>
       )}
 
@@ -40,15 +47,15 @@ export default function MyStrategyPage() {
       <section className="mt-8">
         <h2 className="text-sm font-medium text-neutral-700">Level 5 시험까지 남은 과제</h2>
         <p className="mt-1 text-xs text-neutral-500">
-          "Level 5 시험 응시 조건"은 공식 필드로 확인되지 않아, 남은 Level5 기여 과제 완료 여부로 근사한다 (추정).
+          &ldquo;Level 5 시험 응시 조건&rdquo;은 공식 필드로 확인되지 않아, 남은 Level5 기여 과제 완료 여부로 근사한다 (추정).
         </p>
         <div className="mt-2 overflow-hidden rounded-sm border border-border bg-surface shadow-sm">
           <table className="w-full border-collapse text-sm">
             <thead className="bg-neutral-50 text-left text-xs text-neutral-500">
               <tr className="border-b border-border">
                 <th className="px-3 py-2 font-medium">과제명</th>
-                <th className="px-3 py-2 text-right font-medium">예상 학습시간</th>
-                <th className="px-3 py-2 text-right font-medium">평균 평가대기</th>
+                <th className="px-3 py-2 text-right font-medium">공식 학습시간</th>
+                <th className="px-3 py-2 text-right font-medium">트랙 평균처리</th>
               </tr>
             </thead>
             <tbody>
@@ -59,8 +66,10 @@ export default function MyStrategyPage() {
                       {q.name}
                     </Link>
                   </td>
-                  <td className="px-3 py-2 text-right tabular-nums">{q.avgCompletionHours}h</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{q.avgWaitHours}h</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{q.officialLearningHours}h</td>
+                  <td className="px-3 py-2 text-right tabular-nums">
+                    {q.avgWaitHours === null ? "—" : `${q.avgWaitHours}h`}
+                  </td>
                 </tr>
               ))}
             </tbody>

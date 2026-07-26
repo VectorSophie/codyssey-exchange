@@ -95,7 +95,7 @@ export default function EvalMarketPage() {
       </section>
 
       <p className="mt-6 text-xs text-neutral-400">
-        데이터 신뢰도: 수요/완료 건수는 공개 저장소의 실제 이벤트에서 집계(Confirmed by API). "공급"은 열린 슬롯을
+        데이터 신뢰도: 수요/완료 건수는 공개 저장소의 실제 이벤트에서 집계(Confirmed by API). &ldquo;공급&rdquo;은 열린 슬롯을
         직접 반환하는 API가 없어(2026-07 조사 기준 폐기됨, docs/data-source-map.md 참고) 완료 처리량으로
         근사했으며, 이는 Observed 등급이다.
       </p>

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { mockQuests } from "@/data/mock-quests";
+import { realQuests } from "@/data/real-quests";
 import { mockMember } from "@/data/mock-member";
 import { questStatus, NODE_STATUS_LABEL, type NodeStatus } from "@/domain/progress";
 import { ConfidenceBadge } from "@/components/ConfidenceBadge";
@@ -14,12 +14,15 @@ const STATUS_STYLE: Record<NodeStatus, string> = {
 
 export default function LevelExamPage() {
   const member = mockMember;
-  const nodes = mockQuests.map((q) => ({ quest: q, status: questStatus(q, member, mockQuests) }));
+  const nodes = realQuests.map((q) => ({ quest: q, status: questStatus(q, member, realQuests) }));
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-8">
       <h1 className="text-lg font-semibold">레벨과 시험</h1>
-      <p className="mt-1 text-sm text-neutral-500">mock 데이터 · 실제 Codyssey 세션 관찰 기준(2026-07-26) 필드 신뢰도 반영</p>
+      <p className="mt-1 text-sm text-neutral-500">
+        과제 카탈로그는 실제 데이터 · 진행 상태는 데모 페르소나 · 실제 Codyssey 세션 관찰 기준(2026-07-26) 필드
+        신뢰도 반영
+      </p>
 
       <section className="mt-6 rounded-sm border border-border bg-surface p-5 shadow-sm">
         <div className="flex items-center justify-between">
@@ -38,7 +41,7 @@ export default function LevelExamPage() {
           </div>
         </div>
         <p className="mt-3 text-xs text-neutral-400">
-          실제 계정 관찰 결과 시험 접수 API(<code>POST /exam/usr/list</code>)는 응답에 "다음 레벨 조건"을 직접 명시하는 필드가 없어,
+          실제 계정 관찰 결과 시험 접수 API(<code>POST /exam/usr/list</code>)는 응답에 &ldquo;다음 레벨 조건&rdquo;을 직접 명시하는 필드가 없어,
           남은 Level5 기여 과제 완료 여부로 근사한다. 공식 조건 필드를 찾기 전까지 이 판정은 inferred다.
         </p>
       </section>
@@ -73,8 +76,8 @@ export default function LevelExamPage() {
       <section className="mt-8">
         <h2 className="text-sm font-medium text-neutral-700">시험 접수/결과</h2>
         <p className="mt-2 text-sm text-neutral-500">
-          실제 계정 관찰 결과: <code>시험 → 접수</code> 화면 응시 가능 시험 0건("응시할 시험이 없습니다"),{" "}
-          <code>시험 → 결과</code> 화면 응시 이력 0건. mock 데이터에서도 동일하게 비워둔다 — 없는 데이터를 지어내지 않는다.
+          실제 계정 관찰 결과: <code>시험 → 접수</code> 화면 응시 가능 시험 0건(&ldquo;응시할 시험이 없습니다&rdquo;),{" "}
+          <code>시험 → 결과</code> 화면 응시 이력 0건. 이 화면도 동일하게 비워둔다 — 없는 데이터를 지어내지 않는다.
         </p>
         <div className="mt-3 rounded-sm border border-dashed border-neutral-300 bg-surface px-4 py-6 text-center text-sm text-neutral-400">
           응시 가능한 시험이 없습니다

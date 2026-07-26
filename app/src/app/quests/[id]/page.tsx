@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getQuestById, mockQuests } from "@/data/mock-quests";
-import { computeMetrics, isLowSample } from "@/domain/metrics";
+import { getQuestById, realQuests } from "@/data/real-quests";
+import { bottleneckIndex, bottleneckConfidence, totalParticipants, isLowSample } from "@/domain/metrics";
 import { ConfidenceBadge } from "@/components/ConfidenceBadge";
 import { ChangeValue } from "@/components/ChangeValue";
 
@@ -9,13 +9,11 @@ const STATE_LABEL: Record<string, string> = {
   notStarted: "미진행",
   inProgress: "진행중",
   evalWaiting: "평가 대기",
-  evalScheduled: "평가 예정",
   completed: "완료",
-  reEval: "재평가",
 };
 
 export function generateStaticParams() {
-  return mockQuests.map((q) => ({ id: q.id }));
+  return realQuests.map((q) => ({ id: q.id }));
 }
 
 export default async function QuestDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -23,7 +21,9 @@ export default async function QuestDetailPage({ params }: { params: Promise<{ id
   const quest = getQuestById(id);
   if (!quest) notFound();
 
-  const metrics = computeMetrics(quest);
+  const bottleneck = bottleneckIndex(quest);
+  const confidence = bottleneckConfidence(quest);
+  const participants = totalParticipants(quest);
   const stateEntries = Object.entries(quest.states) as [keyof typeof STATE_LABEL, number][];
 
   return (
@@ -43,17 +43,19 @@ export default async function QuestDetailPage({ params }: { params: Promise<{ id
             )}
             {quest.level5Contribution && (
               <span className="rounded-sm border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[11px] text-emerald-700">
-                Level 5 기여
+                Level 5 기여(추정)
               </span>
             )}
           </div>
-          <p className="mt-1 text-sm text-neutral-500">{quest.track}</p>
+          <p className="mt-1 text-sm text-neutral-500">
+            {quest.course} · {quest.track}
+          </p>
         </div>
         <div className="text-right">
-          <div className="text-2xl font-semibold tabular-nums text-neutral-900">{metrics.bottleneckIndex}</div>
+          <div className="text-2xl font-semibold tabular-nums text-neutral-900">{bottleneck}</div>
           <div className="text-xs text-neutral-500">병목지수</div>
           <div className="mt-1">
-            <ConfidenceBadge level={metrics.bottleneckConfidence} />
+            <ConfidenceBadge level={confidence} />
           </div>
         </div>
       </div>
@@ -66,7 +68,7 @@ export default async function QuestDetailPage({ params }: { params: Promise<{ id
 
       <section className="mt-6">
         <h2 className="text-sm font-medium text-neutral-700">상태 분포</h2>
-        <div className="mt-2 grid grid-cols-3 gap-px overflow-hidden rounded-sm border border-border bg-border shadow-sm sm:grid-cols-6">
+        <div className="mt-2 grid grid-cols-2 gap-px overflow-hidden rounded-sm border border-border bg-border shadow-sm sm:grid-cols-4">
           {stateEntries.map(([key, value]) => (
             <div key={key} className="bg-surface px-3 py-3 text-center">
               <div className="text-lg font-semibold tabular-nums text-neutral-900">{value}</div>
@@ -77,29 +79,34 @@ export default async function QuestDetailPage({ params }: { params: Promise<{ id
       </section>
 
       <section className="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-sm border border-border bg-border shadow-sm sm:grid-cols-4">
-        <Metric label="참여 인원" value={metrics.totalParticipants.toString()} />
+        <Metric label="참여 인원" value={participants.toString()} />
         <Metric
-          label="수급비"
-          value={metrics.demandSupplyRatio === null ? "미확보" : metrics.demandSupplyRatio.toFixed(1)}
+          label="트랙 평균 처리시간"
+          value={quest.avgWaitHours === null ? "데이터 없음" : `${quest.avgWaitHours}h`}
         />
-        <Metric label="평균 평가대기" value={`${quest.avgWaitHours}h`} />
-        <Metric label="평균 완료시간" value={`${quest.avgCompletionHours}h`} />
-        <Metric label="첫시도 PASS율" value={`${(quest.firstAttemptPassRate * 100).toFixed(0)}%`} />
-        <Metric label="재평가율" value={`${(quest.retryRate * 100).toFixed(0)}%`} />
-        <Metric label="열린 슬롯" value={quest.openSlots > 0 ? quest.openSlots.toString() : "미확보"} />
+        <Metric label="공식 학습시간" value={`${quest.officialLearningHours}h`} />
+        <Metric
+          label="평가 PASS율"
+          value={quest.passRate === null ? "표본 없음" : `${(quest.passRate * 100).toFixed(0)}%`}
+        />
+        <Metric
+          label="재평가율"
+          value={quest.retryRate === null ? "표본 없음" : `${(quest.retryRate * 100).toFixed(0)}%`}
+        />
+        <Metric label="PASS/FAIL" value={`${quest.passCount} / ${quest.failCount}`} />
         <Metric label="표본 크기" value={`${quest.sampleSize}건`} />
       </section>
 
       <section className="mt-6">
-        <h2 className="text-sm font-medium text-neutral-700">최근 7일 변화</h2>
+        <h2 className="text-sm font-medium text-neutral-700">최근 변화(약 6일 간격 스냅샷 비교)</h2>
         <p className="mt-2 text-sm">
-          완료 증가율 <ChangeValue pct={quest.recentChangePct} />
+          완료 건수 변화 <ChangeValue pct={quest.recentChangePct} />
         </p>
       </section>
 
       {quest.unlocks.length > 0 && (
         <section className="mt-6">
-          <h2 className="text-sm font-medium text-neutral-700">후속 해제 과제</h2>
+          <h2 className="text-sm font-medium text-neutral-700">후속 해제 과제 (트랙 내 다음 순번, 추정)</h2>
           <ul className="mt-2 flex flex-wrap gap-2">
             {quest.unlocks.map((uid) => {
               const u = getQuestById(uid);
@@ -119,7 +126,9 @@ export default async function QuestDetailPage({ params }: { params: Promise<{ id
       )}
 
       <p className="mt-8 text-xs text-neutral-400">
-        데이터 등급: {quest.confidence === "confirmed_api" ? "공식 API 확인" : "관측/추정 포함"} · mock 데이터 기준
+        상태 분포·PASS/FAIL·공식 학습시간은 codyssey_Quest_Tracker 실제 스냅샷 기준(Confirmed by API). 트랙 평균
+        처리시간은 codyssey_EV_Tracker 실제 이벤트를 트랙 단위로 조인한 근사치(Observed). 후속 해제 과제는
+        커리큘럼 순번 기반 추정이며 공식 의존성 API는 아직 확인되지 않았다.
       </p>
     </main>
   );
