@@ -35,6 +35,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               <Link href="/quests" className="hover:text-neutral-900">
                 과제 시세
               </Link>
+              <Link href="/eval-market" className="hover:text-neutral-900">
+                평가 시장
+              </Link>
               <Link href="/me" className="hover:text-neutral-900">
                 내 전략
               </Link>

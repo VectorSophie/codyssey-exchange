@@ -3,16 +3,26 @@ import { mockQuests, getQuestById } from "@/data/mock-quests";
 import { mockMember } from "@/data/mock-member";
 import { remainingLevel5Quests } from "@/domain/progress";
 import { buildStrategyPaths } from "@/domain/optimizer";
+import { readRealMeFile } from "@/lib/real-me";
 
 export default function MyStrategyPage() {
   const member = mockMember;
   const remaining = remainingLevel5Quests(mockQuests, member);
   const strategies = buildStrategyPaths(mockQuests, member);
+  const realMe = readRealMeFile();
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-8">
       <h1 className="text-lg font-semibold">내 전략</h1>
       <p className="mt-1 text-sm text-neutral-500">mock 데이터 · {member.displayName} 기준</p>
+
+      {realMe && (
+        <div className="mt-3 rounded-sm border border-violet-200 bg-violet-50 px-3 py-2 text-xs text-violet-800">
+          실제 연동 데이터 감지됨 (수집 {realMe.collectedAt}) — 응답 필드 매핑은 아직 검증 전이라 아래 화면에는
+          반영하지 않았다. <code>scripts/collect-me.mjs</code>가 <code>data/private/me.json</code>에 원본을
+          저장해두었으니, 필드 구조 확인 후 Member 어댑터를 연결한다.
+        </div>
+      )}
 
       <section className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label="현재 레벨" value={`Lv.${member.level}`} />
