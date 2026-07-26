@@ -23,10 +23,10 @@ export default function QuestMarketPage() {
         </Link>
       </div>
 
-      <div className="overflow-x-auto rounded-sm border border-neutral-200">
+      <div className="overflow-x-auto rounded-sm border border-border bg-surface shadow-sm">
         <table className="w-full min-w-[960px] border-collapse text-sm">
           <thead className="sticky top-0 bg-neutral-50 text-left text-xs text-neutral-500">
-            <tr className="border-b border-neutral-200">
+            <tr className="border-b border-border">
               <th className="px-3 py-2 font-medium">과제명</th>
               <th className="px-3 py-2 font-medium">트랙</th>
               <th className="px-3 py-2 font-medium">필수</th>

@@ -21,13 +21,14 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ko" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-white text-neutral-900">
-        <header className="border-b border-neutral-200">
-          <div className="mx-auto flex max-w-6xl items-center gap-6 px-6 py-3">
-            <Link href="/" className="text-sm font-semibold tracking-tight">
+      <body className="min-h-full flex flex-col bg-background text-foreground">
+        <header className="border-b border-border bg-surface">
+          <div className="mx-auto flex max-w-6xl items-center gap-6 px-6 py-3.5">
+            <Link href="/" className="flex items-center gap-1.5 text-sm font-semibold tracking-tight">
+              <span className="inline-block h-4 w-1 rounded-[1px] bg-red-600" aria-hidden />
               Codyssey Exchange
             </Link>
-            <nav className="flex gap-4 text-sm text-neutral-600">
+            <nav className="flex gap-5 text-sm text-neutral-600">
               <Link href="/" className="hover:text-neutral-900">
                 시장 개요
               </Link>
@@ -35,6 +36,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                 과제 시세
               </Link>
             </nav>
+            <span className="ml-auto text-[11px] text-neutral-400">mock 데이터 · 실제 화폐를 다루지 않음</span>
           </div>
         </header>
         <div className="flex flex-1 flex-col">{children}</div>

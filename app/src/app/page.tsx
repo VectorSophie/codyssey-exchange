@@ -22,11 +22,11 @@ export default function MarketOverviewPage() {
         mock 데이터 기준 · 실제 화폐·투자수익률을 다루지 않는 학습 활동 분석 도구입니다.
       </p>
 
-      <div className="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-sm border border-neutral-200 bg-neutral-200 sm:grid-cols-4">
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label="전체 평가 대기" value={totalWaiting.toString()} />
         <Stat label="전체 열린 슬롯" value={totalSlots.toString()} />
         <Stat label="평균 병목지수" value={avgBottleneck.toString()} />
-        <Stat label="병목 과제 수 (≥60)" value={bottleneckCount.toString()} />
+        <Stat label="병목 과제 수 (≥60)" value={bottleneckCount.toString()} accent={bottleneckCount > 0 ? "warn" : undefined} />
       </div>
 
       <section className="mt-8">
@@ -36,7 +36,7 @@ export default function MarketOverviewPage() {
             전체 과제 시세 →
           </Link>
         </div>
-        <div className="overflow-hidden rounded-sm border border-neutral-200">
+        <div className="overflow-hidden rounded-sm border border-border bg-surface shadow-sm">
           <table className="w-full border-collapse text-sm">
             <thead className="bg-neutral-50 text-left text-xs text-neutral-500">
               <tr className="border-b border-neutral-200">
@@ -71,11 +71,17 @@ export default function MarketOverviewPage() {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value, accent }: { label: string; value: string; accent?: "warn" }) {
   return (
-    <div className="bg-white px-4 py-4">
+    <div className="rounded-sm border border-border bg-surface px-4 py-4 shadow-sm">
       <div className="text-xs text-neutral-500">{label}</div>
-      <div className="mt-1 text-xl font-semibold tabular-nums">{value}</div>
+      <div
+        className={`mt-1 text-xl font-semibold tabular-nums ${
+          accent === "warn" ? "text-amber-600" : "text-neutral-900"
+        }`}
+      >
+        {value}
+      </div>
     </div>
   );
 }

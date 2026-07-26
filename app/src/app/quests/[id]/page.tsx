@@ -66,9 +66,9 @@ export default async function QuestDetailPage({ params }: { params: Promise<{ id
 
       <section className="mt-6">
         <h2 className="text-sm font-medium text-neutral-700">상태 분포</h2>
-        <div className="mt-2 grid grid-cols-3 gap-px overflow-hidden rounded-sm border border-neutral-200 bg-neutral-200 sm:grid-cols-6">
+        <div className="mt-2 grid grid-cols-3 gap-px overflow-hidden rounded-sm border border-border bg-border shadow-sm sm:grid-cols-6">
           {stateEntries.map(([key, value]) => (
-            <div key={key} className="bg-white px-3 py-3 text-center">
+            <div key={key} className="bg-surface px-3 py-3 text-center">
               <div className="text-lg font-semibold tabular-nums text-neutral-900">{value}</div>
               <div className="mt-0.5 text-[11px] text-neutral-500">{STATE_LABEL[key]}</div>
             </div>
@@ -76,7 +76,7 @@ export default async function QuestDetailPage({ params }: { params: Promise<{ id
         </div>
       </section>
 
-      <section className="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-sm border border-neutral-200 bg-neutral-200 sm:grid-cols-4">
+      <section className="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-sm border border-border bg-border shadow-sm sm:grid-cols-4">
         <Metric label="참여 인원" value={metrics.totalParticipants.toString()} />
         <Metric
           label="수급비"
@@ -127,7 +127,7 @@ export default async function QuestDetailPage({ params }: { params: Promise<{ id
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-white px-3 py-3">
+    <div className="bg-surface px-3 py-3">
       <div className="text-[11px] text-neutral-500">{label}</div>
       <div className="mt-0.5 text-base font-semibold tabular-nums text-neutral-900">{value}</div>
     </div>
