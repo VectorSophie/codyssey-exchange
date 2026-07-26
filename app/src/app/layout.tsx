@@ -35,6 +35,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               <Link href="/quests" className="hover:text-neutral-900">
                 과제 시세
               </Link>
+              <Link href="/me" className="hover:text-neutral-900">
+                내 전략
+              </Link>
+              <Link href="/level-exam" className="hover:text-neutral-900">
+                레벨과 시험
+              </Link>
             </nav>
             <span className="ml-auto text-[11px] text-neutral-400">mock 데이터 · 실제 화폐를 다루지 않음</span>
           </div>

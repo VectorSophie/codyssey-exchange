@@ -131,7 +131,7 @@ export const mockQuests: Quest[] = [
     avgWaitHours: 0,
     avgCompletionHours: 5,
     firstAttemptPassRate: 0.67,
-    retryRate: 0,
+    retryRate: 0.35,
     unlocks: [],
     level5Contribution: true,
     sampleSize: 3,
