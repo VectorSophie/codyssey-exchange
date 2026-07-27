@@ -42,3 +42,10 @@ export function weekdayTotals(agg: EvalMarketAggregate) {
     supply: agg.supplyByDayHour[d].reduce((s, v) => s + v, 0),
   }));
 }
+
+// 요일 구분 없이 시간대(0~23)별로 합산 — 하루 안에서 수요/공급이 언제 엇갈리는지 보는 메인 차트용.
+export function hourlyTotals(agg: EvalMarketAggregate): { demand: number[]; supply: number[] } {
+  const demand = Array.from({ length: 24 }, (_, h) => agg.demandByDayHour.reduce((s, day) => s + day[h], 0));
+  const supply = Array.from({ length: 24 }, (_, h) => agg.supplyByDayHour.reduce((s, day) => s + day[h], 0));
+  return { demand, supply };
+}

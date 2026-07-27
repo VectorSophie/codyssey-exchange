@@ -1,8 +1,21 @@
 import Link from "next/link";
 import { realQuests, dataGeneratedAt } from "@/data/real-quests";
 import { realEvalAggregate } from "@/data/real-eval-aggregate";
+import { hourlyTotals } from "@/domain/evaluation";
 import { bottleneckIndex } from "@/domain/metrics";
 import { ChangeValue } from "@/components/ChangeValue";
+import { SupplyDemandChart } from "@/components/SupplyDemandChart";
+import { QuestTicker } from "@/components/QuestTicker";
+
+// 하루 단위로만 갱신 — "오늘의 과제"가 실제 날짜에 따라 도는 것이지 매 새로고침마다 바뀌는 가짜 실시간이 아니다.
+export const revalidate = 3600;
+
+function pickFeaturedQuest(): (typeof realQuests)[number] {
+  const dayOfYear = Math.floor(
+    (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86_400_000
+  );
+  return realQuests[dayOfYear % realQuests.length];
+}
 
 export default function MarketOverviewPage() {
   const rows = realQuests.map((q) => ({ quest: q, bottleneck: bottleneckIndex(q) }));
@@ -12,6 +25,11 @@ export default function MarketOverviewPage() {
   const bottleneckCount = rows.filter((r) => r.bottleneck >= 60).length;
 
   const topBottleneck = [...rows].sort((a, b) => b.bottleneck - a.bottleneck).slice(0, 5);
+  const { demand, supply } = hourlyTotals(realEvalAggregate);
+
+  const featured = pickFeaturedQuest();
+  const topRisk = [...realQuests].sort((a, b) => bottleneckIndex(b) - bottleneckIndex(a))[0];
+  const topMomentum = [...realQuests].sort((a, b) => b.recentChangePct - a.recentChangePct)[0];
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-8">
@@ -31,6 +49,38 @@ export default function MarketOverviewPage() {
           accent={bottleneckCount > 0 ? "warn" : undefined}
         />
       </div>
+
+      <section className="mt-8 grid grid-cols-1 gap-3 lg:grid-cols-3">
+        <div className="rounded-sm border border-border bg-surface p-5 shadow-sm lg:col-span-2">
+          <div className="flex items-baseline justify-between">
+            <h2 className="text-sm font-medium text-neutral-700">시간대별 수요 vs 공급(근사)</h2>
+            <Link href="/eval-market" className="text-xs text-neutral-500 hover:text-neutral-900">
+              평가 시장 전체 →
+            </Link>
+          </div>
+          <p className="mt-1 text-xs text-neutral-500">
+            이 프로젝트가 출발한 질문 — 하루 24시간 동안 평가 요청(수요)과 완료 처리(공급 근사)가 언제 교차하는가.
+            주황 음영 = 수요 우위(부족), 초록 음영 = 공급 우위(여유). 3개월 실제 이벤트를 요일 구분 없이 합산.
+          </p>
+          <div className="mt-3">
+            <SupplyDemandChart demand={demand} supply={supply} />
+          </div>
+          <div className="mt-2 flex gap-4 text-[11px] text-neutral-500">
+            <span className="flex items-center gap-1">
+              <span className="inline-block h-2 w-3 rounded-[1px] bg-neutral-900" /> 수요(평가 요청)
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="inline-block h-2 w-3 rounded-[1px] bg-neutral-400" /> 공급 근사(완료 처리)
+            </span>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          <QuestTicker quest={featured} label="오늘의 과제" />
+          <QuestTicker quest={topRisk} label="병목지수 1위" />
+          <QuestTicker quest={topMomentum} label="최근 가장 개선됨" />
+        </div>
+      </section>
 
       <section className="mt-8">
         <div className="mb-2 flex items-baseline justify-between">
