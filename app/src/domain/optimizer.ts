@@ -75,8 +75,8 @@ export function buildStrategyPaths(quests: Quest[], member: Member): StrategyPat
 
   return (Object.keys(orders) as StrategyId[]).map((id) => {
     const questOrder = orders[id];
-    const totalHours = questOrder.reduce((s, q) => s + q.officialLearningHours, 0);
-    const totalWaitHours = questOrder.reduce((s, q) => s + wait(q), 0);
+    const totalHours = Math.round(questOrder.reduce((s, q) => s + q.officialLearningHours, 0) * 10) / 10;
+    const totalWaitHours = Math.round(questOrder.reduce((s, q) => s + wait(q), 0) * 10) / 10;
     const estimatedDays = Math.ceil((totalHours + totalWaitHours) / 24);
     return {
       id,

@@ -14,20 +14,11 @@ export default function MyStrategyPage() {
   return (
     <main className="mx-auto max-w-5xl px-6 py-8">
       <h1 className="text-lg font-semibold">내 전략</h1>
-      <p className="mt-1 text-sm text-neutral-500">
-        과제 카탈로그는 실제 데이터 · 진행 상태는 {member.displayName}(데모 페르소나) 기준
-      </p>
+      <p className="mt-1 text-sm text-neutral-500">{member.displayName} 기준</p>
 
-      {realMe ? (
+      {realMe && (
         <div className="mt-3 rounded-sm border border-violet-200 bg-violet-50 px-3 py-2 text-xs text-violet-800">
-          실제 연동 데이터 감지됨 (수집 {realMe.collectedAt}) — 응답 필드 매핑은 아직 검증 전이라 아래 화면에는
-          반영하지 않았다. <code>scripts/collect-me.mjs</code>가 <code>data/private/me.json</code>에 원본을
-          저장해두었으니, 필드 구조 확인 후 Member 어댑터를 연결한다.
-        </div>
-      ) : (
-        <div className="mt-3 rounded-sm border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs text-neutral-500">
-          본인 데이터로 바꾸려면: <code>cp .env.example .env</code> 후 CODYSSEY_SESSION 값을 채우고{" "}
-          <code>node scripts/collect-me.mjs</code> 실행.
+          실제 연동 데이터 감지됨 (수집 {realMe.collectedAt}) — 아직 화면에 반영되지 않았다.
         </div>
       )}
 
@@ -46,11 +37,6 @@ export default function MyStrategyPage() {
 
       <section className="mt-8">
         <h2 className="text-sm font-medium text-neutral-700">남은 과제 ({remaining.length}개)</h2>
-        <p className="mt-1 text-xs text-neutral-500">
-          과제 간 선행조건은 없어 순서 상관없이 선택 가능하다. 과제별 정확한 지급 경험치는 아직 확인되지 않아
-          완료 시 레벨업 기여도는 명시하지 않는다 — <Link href="/level-exam" className="underline">레벨과 시험</Link>
-          의 미션 단계별 경험치 표(일부 미확인) 참고.
-        </p>
         <div className="mt-2 overflow-hidden rounded-sm border border-border bg-surface shadow-sm">
           <table className="w-full border-collapse text-sm">
             <thead className="bg-neutral-50 text-left text-xs text-neutral-500">
@@ -86,6 +72,42 @@ export default function MyStrategyPage() {
             레벨과 시험 →
           </Link>
         </div>
+
+        {strategies.length > 0 && (
+          <div className="mb-3 rounded-sm border border-border bg-surface p-4 shadow-sm">
+            <div className="space-y-1.5">
+              {strategies.map((s) => {
+                const total = Math.round((s.totalHours + s.totalWaitHours) * 10) / 10;
+                const maxTotal = Math.max(...strategies.map((x) => x.totalHours + x.totalWaitHours));
+                return (
+                  <div key={s.id} className="grid grid-cols-[6.5rem_1fr_3rem] items-center gap-2 text-xs">
+                    <span className="text-neutral-500">{s.label}</span>
+                    <div className="flex h-2.5 overflow-hidden rounded-[2px] bg-neutral-100">
+                      <div
+                        className="h-full bg-neutral-800"
+                        style={{ width: `${(s.totalHours / maxTotal) * 100}%` }}
+                      />
+                      <div
+                        className="h-full bg-amber-400"
+                        style={{ width: `${(s.totalWaitHours / maxTotal) * 100}%` }}
+                      />
+                    </div>
+                    <span className="text-right tabular-nums text-neutral-500">{total}h</span>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-2 flex gap-4 text-[11px] text-neutral-500">
+              <span className="flex items-center gap-1">
+                <span className="inline-block h-2 w-3 rounded-[1px] bg-neutral-800" /> 학습시간
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block h-2 w-3 rounded-[1px] bg-amber-400" /> 평가대기
+              </span>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {strategies.map((s) => (
             <div key={s.id} className="rounded-sm border border-border bg-surface p-4 shadow-sm">

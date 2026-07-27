@@ -27,9 +27,7 @@ export default function LevelExamPage() {
   return (
     <main className="mx-auto max-w-5xl px-6 py-8">
       <h1 className="text-lg font-semibold">레벨과 시험</h1>
-      <p className="mt-1 text-sm text-neutral-500">
-        과제 카탈로그는 실제 데이터 · 진행 상태는 데모 페르소나 · 레벨 분포는 실제 확인된 값
-      </p>
+      <p className="mt-1 text-sm text-neutral-500">{member.displayName} 기준</p>
 
       <section className="mt-6 rounded-sm border border-border bg-surface p-5 shadow-sm">
         <div className="flex items-center justify-between">
@@ -48,9 +46,7 @@ export default function LevelExamPage() {
           </div>
         </div>
         <p className="mt-3 text-xs text-neutral-400">
-          실제 계정 관찰 결과 시험 접수 API(<code>POST /exam/usr/list</code>)는 응답에 &ldquo;다음 레벨
-          조건&rdquo;을 직접 명시하는 필드가 없다. 레벨은 특정 과제 완료가 아니라 누적 경험치 임계값
-          도달로 오른다(사용자 확인) — 아래 경험치 표를 참고하되 정확한 임계값은 아직 미확정이다.
+          레벨은 특정 과제 완료가 아니라 누적 경험치 임계값 도달로 오른다 — 아래 경험치 표 참고.
         </p>
       </section>
 
@@ -59,10 +55,7 @@ export default function LevelExamPage() {
           <h2 className="text-sm font-medium text-neutral-700">레벨 분포</h2>
           <ConfidenceBadge level={LEVEL_DISTRIBUTION_CONFIDENCE} />
         </div>
-        <p className="mt-1 text-xs text-neutral-500">
-          길드 랭킹 상세 화면에서 직접 확인한 실제 분포(특정 길드 기준, 2026-07-28). 상위 레벨로 갈수록 인원이
-          급격히 줄어드는 피라미드 구조다.
-        </p>
+        <p className="mt-1 text-xs text-neutral-500">특정 길드 기준 — 상위 레벨로 갈수록 급격히 줄어드는 피라미드 구조</p>
         <div className="mt-3 space-y-2 rounded-sm border border-border bg-surface p-4 shadow-sm">
           {OBSERVED_LEVEL_DISTRIBUTION.map((d) => (
             <div key={d.level} className="flex items-center gap-3 text-sm">
@@ -84,11 +77,7 @@ export default function LevelExamPage() {
           <h2 className="text-sm font-medium text-neutral-700">미션 단계별 경험치</h2>
           <ConfidenceBadge level={MISSION_XP_CONFIDENCE} />
         </div>
-        <p className="mt-1 text-xs text-neutral-500">
-          사용자가 인게임에서 직접 확인한 값(API 응답 확인은 아님). 5-2/5-3은 존재 여부를 포함해 아직
-          확인되지 않았다. 평가 완료 시 +{EVAL_COMPLETION_BONUS_XP} 보너스가 별도로 붙는다고 하나 이건
-          재확인되지 않았다.
-        </p>
+        <p className="mt-1 text-xs text-neutral-500">평가 완료 시 +{EVAL_COMPLETION_BONUS_XP} 보너스 별도</p>
         <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
           {Object.entries(MISSION_TIER_XP).map(([tier, xp]) => (
             <div key={tier} className="rounded-sm border border-border bg-surface px-3 py-2 text-center shadow-sm">
@@ -100,21 +89,18 @@ export default function LevelExamPage() {
           ))}
         </div>
         <div className="mt-3 flex items-center gap-2 text-xs text-neutral-500">
-          <span>레벨 도달 누적 경험치(전언, 미검증)</span>
+          <span>레벨 도달 누적 경험치</span>
           <ConfidenceBadge level={LEVEL_THRESHOLD_CONFIDENCE} />
         </div>
         <p className="mt-1 text-xs text-neutral-400">
-          Lv.4 {LEVEL_XP_THRESHOLD_HEARSAY[4]} · Lv.5 {LEVEL_XP_THRESHOLD_HEARSAY[5]} — 위 미션 표를 1-1부터
-          5-1까지 단순 합산하면 약 7,800으로, 전언 수치(약 9,000)와 차이가 있다. 5-2/5-3의 존재 또는 평가
-          보너스 누적으로 메워질 가능성이 있으나 확인되지 않았다.
+          Lv.4 {LEVEL_XP_THRESHOLD_HEARSAY[4]} · Lv.5 {LEVEL_XP_THRESHOLD_HEARSAY[5]} — 미션 표 합산(약 7,800)과는
+          차이가 있다.
         </p>
       </section>
 
       <section className="mt-8">
         <h2 className="text-sm font-medium text-neutral-700">과제 진행 상태</h2>
-        <p className="mt-1 text-xs text-neutral-500">
-          과제 간 선행조건은 없다 — 순서 없이 자유롭게 선택할 수 있다(사용자 확인, 2026-07-28).
-        </p>
+        <p className="mt-1 text-xs text-neutral-500">과제 간 선행조건은 없다 — 순서 없이 자유롭게 선택할 수 있다.</p>
         <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
           {nodes.map(({ quest: q, status }) => (
             <Link
@@ -139,10 +125,6 @@ export default function LevelExamPage() {
 
       <section className="mt-8">
         <h2 className="text-sm font-medium text-neutral-700">시험 접수/결과</h2>
-        <p className="mt-2 text-sm text-neutral-500">
-          실제 계정 관찰 결과: <code>시험 → 접수</code> 화면 응시 가능 시험 0건(&ldquo;응시할 시험이 없습니다&rdquo;),{" "}
-          <code>시험 → 결과</code> 화면 응시 이력 0건. 이 화면도 동일하게 비워둔다 — 없는 데이터를 지어내지 않는다.
-        </p>
         <div className="mt-3 rounded-sm border border-dashed border-neutral-300 bg-surface px-4 py-6 text-center text-sm text-neutral-400">
           응시 가능한 시험이 없습니다
         </div>

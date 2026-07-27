@@ -63,6 +63,12 @@ export default async function QuestDetailPage({ params }: { params: Promise<{ id
 
       <section className="mt-6">
         <h2 className="text-sm font-medium text-neutral-700">상태 분포</h2>
+        <div className="mt-2 flex h-3 overflow-hidden rounded-[2px]">
+          <div className="bg-neutral-200" style={{ width: `${(quest.states.notStarted / participants) * 100}%` }} />
+          <div className="bg-blue-400" style={{ width: `${(quest.states.inProgress / participants) * 100}%` }} />
+          <div className="bg-amber-400" style={{ width: `${(quest.states.evalWaiting / participants) * 100}%` }} />
+          <div className="bg-emerald-500" style={{ width: `${(quest.states.completed / participants) * 100}%` }} />
+        </div>
         <div className="mt-2 grid grid-cols-2 gap-px overflow-hidden rounded-sm border border-border bg-border shadow-sm sm:grid-cols-4">
           {stateEntries.map(([key, value]) => (
             <div key={key} className="bg-surface px-3 py-3 text-center">
@@ -99,11 +105,7 @@ export default async function QuestDetailPage({ params }: { params: Promise<{ id
         </p>
       </section>
 
-      <p className="mt-8 text-xs text-neutral-400">
-        상태 분포·PASS/FAIL·공식 학습시간은 codyssey_Quest_Tracker 실제 스냅샷 기준(Confirmed by API). 트랙 평균
-        처리시간은 codyssey_EV_Tracker 실제 이벤트를 트랙 단위로 조인한 근사치(Observed). 과제 간 선행조건은
-        없다 — 순서 없이 자유롭게 선택할 수 있다(사용자 확인, 2026-07-28).
-      </p>
+      <p className="mt-8 text-xs text-neutral-400">과제 간 선행조건은 없다 — 순서 없이 자유롭게 선택할 수 있다.</p>
     </main>
   );
 }

@@ -45,7 +45,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                 레벨과 시험
               </Link>
             </nav>
-            <span className="ml-auto text-[11px] text-neutral-400">실제 데이터 연동 · 실제 화폐·투자수익을 다루지 않음</span>
           </div>
         </header>
         <div className="flex flex-1 flex-col">{children}</div>

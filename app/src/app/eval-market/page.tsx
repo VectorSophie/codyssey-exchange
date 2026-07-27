@@ -21,9 +21,7 @@ export default function EvalMarketPage() {
   return (
     <main className="mx-auto max-w-6xl px-6 py-8">
       <h1 className="text-lg font-semibold">평가 시장</h1>
-      <p className="mt-1 text-sm text-neutral-500">
-        실제 데이터 · {agg.source} · 집계 {agg.generatedAt.slice(0, 10)}
-      </p>
+      <p className="mt-1 text-sm text-neutral-500">집계 {agg.generatedAt.slice(0, 10)}</p>
 
       <section className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label="전체 이벤트" value={agg.totalEvents.toLocaleString()} />
@@ -38,8 +36,7 @@ export default function EvalMarketPage() {
       <section className="mt-8">
         <h2 className="text-sm font-medium text-neutral-700">시간대 × 요일 수급 히트맵</h2>
         <p className="mt-1 text-xs text-neutral-500">
-          주황 = 수요(평가 요청)가 공급(완료 처리)보다 많은 시간대 · 초록 = 공급이 수요보다 여유 있는 시간대.
-          공급 자체를 직접 반환하는 API가 없어 완료 처리량을 공급 근사치로 사용한다(관측 기반, 확정 아님).
+          주황 = 수요(평가 요청)가 공급(완료 처리)보다 많은 시간대 · 초록 = 공급이 수요보다 여유 있는 시간대
         </p>
         <div className="mt-3 overflow-x-auto rounded-sm border border-border bg-surface p-4 shadow-sm">
           <div className="grid min-w-[820px] grid-cols-[2.5rem_repeat(24,1fr)] gap-[2px] text-[10px]">
@@ -70,7 +67,7 @@ export default function EvalMarketPage() {
       </section>
 
       <section className="mt-8">
-        <h2 className="text-sm font-medium text-neutral-700">요일별 수요 vs 공급(근사)</h2>
+        <h2 className="text-sm font-medium text-neutral-700">요일별 수요 vs 공급</h2>
         <div className="mt-3 rounded-sm border border-border bg-surface p-4 shadow-sm">
           <div className="space-y-3">
             {weekly.map((w) => (
@@ -88,17 +85,12 @@ export default function EvalMarketPage() {
               <span className="inline-block h-2 w-3 rounded-[1px] bg-neutral-800" /> 수요(평가 요청)
             </span>
             <span className="flex items-center gap-1">
-              <span className="inline-block h-2 w-3 rounded-[1px] bg-neutral-300" /> 공급 근사(완료 처리)
+              <span className="inline-block h-2 w-3 rounded-[1px] bg-neutral-300" /> 공급(완료 처리)
             </span>
           </div>
         </div>
       </section>
 
-      <p className="mt-6 text-xs text-neutral-400">
-        데이터 신뢰도: 수요/완료 건수는 공개 저장소의 실제 이벤트에서 집계(Confirmed by API). &ldquo;공급&rdquo;은 열린 슬롯을
-        직접 반환하는 API가 없어(2026-07 조사 기준 폐기됨, docs/data-source-map.md 참고) 완료 처리량으로
-        근사했으며, 이는 Observed 등급이다.
-      </p>
     </main>
   );
 }

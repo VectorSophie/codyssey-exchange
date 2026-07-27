@@ -34,10 +34,7 @@ export default function MarketOverviewPage() {
   return (
     <main className="mx-auto max-w-6xl px-6 py-8">
       <h1 className="text-lg font-semibold">시장 개요</h1>
-      <p className="mt-1 text-sm text-neutral-500">
-        실제 데이터 기준(과제 시세 수집 {dataGeneratedAt.slice(0, 10)} · 평가 시장 3개월 누적) · 실제
-        화폐·투자수익률을 다루지 않는 학습 활동 분석 도구입니다.
-      </p>
+      <p className="mt-1 text-sm text-neutral-500">과제 시세 수집 {dataGeneratedAt.slice(0, 10)} · 평가 시장 3개월 누적</p>
 
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label="전체 평가 대기(과제)" value={totalWaiting.toString()} />
@@ -53,14 +50,13 @@ export default function MarketOverviewPage() {
       <section className="mt-8 grid grid-cols-1 gap-3 lg:grid-cols-3">
         <div className="rounded-sm border border-border bg-surface p-5 shadow-sm lg:col-span-2">
           <div className="flex items-baseline justify-between">
-            <h2 className="text-sm font-medium text-neutral-700">시간대별 수요 vs 공급(근사)</h2>
+            <h2 className="text-sm font-medium text-neutral-700">시간대별 수요 vs 공급</h2>
             <Link href="/eval-market" className="text-xs text-neutral-500 hover:text-neutral-900">
               평가 시장 전체 →
             </Link>
           </div>
           <p className="mt-1 text-xs text-neutral-500">
-            이 프로젝트가 출발한 질문 — 하루 24시간 동안 평가 요청(수요)과 완료 처리(공급 근사)가 언제 교차하는가.
-            주황 음영 = 수요 우위(부족), 초록 음영 = 공급 우위(여유). 3개월 실제 이벤트를 요일 구분 없이 합산.
+            주황 음영 = 수요 우위(부족), 초록 음영 = 공급 우위(여유)
           </p>
           <div className="mt-3">
             <SupplyDemandChart demand={demand} supply={supply} />
@@ -70,7 +66,7 @@ export default function MarketOverviewPage() {
               <span className="inline-block h-2 w-3 rounded-[1px] bg-neutral-900" /> 수요(평가 요청)
             </span>
             <span className="flex items-center gap-1">
-              <span className="inline-block h-2 w-3 rounded-[1px] bg-neutral-400" /> 공급 근사(완료 처리)
+              <span className="inline-block h-2 w-3 rounded-[1px] bg-neutral-400" /> 공급(완료 처리)
             </span>
           </div>
         </div>

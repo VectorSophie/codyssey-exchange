@@ -20,13 +20,32 @@ export default function QuestMarketPage() {
         <div>
           <h1 className="text-lg font-semibold text-neutral-900">과제 시세</h1>
           <p className="mt-1 text-sm text-neutral-500">
-            실제 데이터 · 전체 {realQuests.length}개 과제(AI/SW 기초) · 병목지수 높은 순 · 수집{" "}
-            {dataGeneratedAt.slice(0, 10)}
+            전체 {realQuests.length}개 과제(AI/SW 기초) · 병목지수 높은 순 · 수집 {dataGeneratedAt.slice(0, 10)}
           </p>
         </div>
         <Link href="/" className="text-sm text-neutral-500 hover:text-neutral-900">
           ← 시장 개요
         </Link>
+      </div>
+
+      <div className="mb-6 rounded-sm border border-border bg-surface p-4 shadow-sm">
+        <h2 className="text-xs font-medium text-neutral-500">병목지수 분포</h2>
+        <div className="mt-3 space-y-1.5">
+          {rows.map(({ quest: q, bottleneck }) => (
+            <div key={q.id} className="grid grid-cols-[1fr_2.5rem] items-center gap-2 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="w-40 shrink-0 truncate text-neutral-500">{q.name}</span>
+                <div className="h-2 flex-1 overflow-hidden rounded-[2px] bg-neutral-100">
+                  <div
+                    className={bottleneck >= 20 ? "h-full bg-amber-500" : "h-full bg-neutral-400"}
+                    style={{ width: `${(bottleneck / 30) * 100}%` }}
+                  />
+                </div>
+              </div>
+              <span className="text-right tabular-nums text-neutral-600">{bottleneck}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-sm border border-border bg-surface shadow-sm">
@@ -92,8 +111,7 @@ export default function QuestMarketPage() {
       </div>
 
       <p className="mt-3 text-xs text-neutral-400">
-        트랙 평균처리시간은 codyssey_EV_Tracker 실제 이벤트를 같은 트랙 기준으로 평균낸 값이라 과제 단위
-        정밀도는 아니다. 평가 수요/공급의 시간대별 분포는 <Link href="/eval-market" className="underline">평가 시장</Link>에서 확인한다.
+        평가 수요/공급의 시간대별 분포는 <Link href="/eval-market" className="underline">평가 시장</Link>에서 확인한다.
       </p>
     </main>
   );
