@@ -27,8 +27,6 @@ export const realQuests: Quest[] = [
     sampleSize: 150,
     recentChangePct: 16.7,
     avgWaitHours: 2.7,
-    unlocks: ["q185007"],
-    level5Contribution: true,
   },
   {
     id: "q185007",
@@ -45,8 +43,6 @@ export const realQuests: Quest[] = [
     sampleSize: 150,
     recentChangePct: 0,
     avgWaitHours: 2.7,
-    unlocks: [],
-    level5Contribution: true,
   },
   {
     id: "q185004",
@@ -63,8 +59,6 @@ export const realQuests: Quest[] = [
     sampleSize: 150,
     recentChangePct: 0,
     avgWaitHours: 4.3,
-    unlocks: ["q185005"],
-    level5Contribution: true,
   },
   {
     id: "q185005",
@@ -81,8 +75,6 @@ export const realQuests: Quest[] = [
     sampleSize: 150,
     recentChangePct: 5.6,
     avgWaitHours: 4.3,
-    unlocks: [],
-    level5Contribution: true,
   },
   {
     id: "q185012",
@@ -99,8 +91,6 @@ export const realQuests: Quest[] = [
     sampleSize: 150,
     recentChangePct: 21.2,
     avgWaitHours: 2.9,
-    unlocks: ["q185013"],
-    level5Contribution: true,
   },
   {
     id: "q185013",
@@ -117,8 +107,6 @@ export const realQuests: Quest[] = [
     sampleSize: 150,
     recentChangePct: 33.3,
     avgWaitHours: 2.9,
-    unlocks: ["q185014"],
-    level5Contribution: false,
   },
   {
     id: "q185014",
@@ -135,8 +123,6 @@ export const realQuests: Quest[] = [
     sampleSize: 150,
     recentChangePct: 0,
     avgWaitHours: 2.9,
-    unlocks: [],
-    level5Contribution: false,
   },
   {
     id: "q185010",
@@ -153,8 +139,6 @@ export const realQuests: Quest[] = [
     sampleSize: 150,
     recentChangePct: 7.4,
     avgWaitHours: 7.9,
-    unlocks: ["q185011"],
-    level5Contribution: true,
   },
   {
     id: "q185011",
@@ -171,8 +155,6 @@ export const realQuests: Quest[] = [
     sampleSize: 150,
     recentChangePct: 0,
     avgWaitHours: 7.9,
-    unlocks: [],
-    level5Contribution: false,
   },
   {
     id: "q185015",
@@ -189,8 +171,6 @@ export const realQuests: Quest[] = [
     sampleSize: 150,
     recentChangePct: 14.3,
     avgWaitHours: 1.8,
-    unlocks: ["q185016"],
-    level5Contribution: true,
   },
   {
     id: "q185016",
@@ -207,8 +187,6 @@ export const realQuests: Quest[] = [
     sampleSize: 150,
     recentChangePct: -11.1,
     avgWaitHours: 1.8,
-    unlocks: [],
-    level5Contribution: true,
   },
   {
     id: "q185008",
@@ -225,8 +203,6 @@ export const realQuests: Quest[] = [
     sampleSize: 150,
     recentChangePct: 6.7,
     avgWaitHours: 8,
-    unlocks: ["q185009"],
-    level5Contribution: true,
   },
   {
     id: "q185009",
@@ -243,8 +219,6 @@ export const realQuests: Quest[] = [
     sampleSize: 150,
     recentChangePct: 28.6,
     avgWaitHours: 8,
-    unlocks: [],
-    level5Contribution: true,
   },
 ];
 

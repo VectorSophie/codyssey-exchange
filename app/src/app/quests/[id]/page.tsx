@@ -41,11 +41,6 @@ export default async function QuestDetailPage({ params }: { params: Promise<{ id
                 필수
               </span>
             )}
-            {quest.level5Contribution && (
-              <span className="rounded-sm border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[11px] text-emerald-700">
-                Level 5 기여(추정)
-              </span>
-            )}
           </div>
           <p className="mt-1 text-sm text-neutral-500">
             {quest.course} · {quest.track}
@@ -104,31 +99,10 @@ export default async function QuestDetailPage({ params }: { params: Promise<{ id
         </p>
       </section>
 
-      {quest.unlocks.length > 0 && (
-        <section className="mt-6">
-          <h2 className="text-sm font-medium text-neutral-700">후속 해제 과제 (트랙 내 다음 순번, 추정)</h2>
-          <ul className="mt-2 flex flex-wrap gap-2">
-            {quest.unlocks.map((uid) => {
-              const u = getQuestById(uid);
-              return (
-                <li key={uid}>
-                  <Link
-                    href={`/quests/${uid}`}
-                    className="rounded-sm border border-neutral-200 px-2 py-1 text-xs text-neutral-700 hover:border-neutral-400"
-                  >
-                    {u?.name ?? uid}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      )}
-
       <p className="mt-8 text-xs text-neutral-400">
         상태 분포·PASS/FAIL·공식 학습시간은 codyssey_Quest_Tracker 실제 스냅샷 기준(Confirmed by API). 트랙 평균
-        처리시간은 codyssey_EV_Tracker 실제 이벤트를 트랙 단위로 조인한 근사치(Observed). 후속 해제 과제는
-        커리큘럼 순번 기반 추정이며 공식 의존성 API는 아직 확인되지 않았다.
+        처리시간은 codyssey_EV_Tracker 실제 이벤트를 트랙 단위로 조인한 근사치(Observed). 과제 간 선행조건은
+        없다 — 순서 없이 자유롭게 선택할 수 있다(사용자 확인, 2026-07-28).
       </p>
     </main>
   );

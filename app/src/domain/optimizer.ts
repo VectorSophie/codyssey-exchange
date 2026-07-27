@@ -1,6 +1,6 @@
 import type { Quest } from "./quest";
 import type { Member } from "./member";
-import { remainingLevel5Quests } from "./progress";
+import { remainingQuests } from "./progress";
 
 export type StrategyId = "fastest" | "safest" | "low_wait" | "efficient" | "balanced";
 
@@ -19,7 +19,10 @@ const STRATEGY_META: Record<StrategyId, { label: string; description: string }> 
   fastest: { label: "가장 빠른 경로", description: "학습시간+평균 처리시간 합이 가장 짧은 순" },
   safest: { label: "가장 안전한 경로", description: "재평가율이 낮은 순 — 실패 위험 최소화" },
   low_wait: { label: "대기가 적은 경로", description: "트랙 평균 처리시간이 짧은 순" },
-  efficient: { label: "시간당 진척이 높은 경로", description: "투입 시간 대비 진척가치(Level5 기여)가 높은 순" },
+  efficient: {
+    label: "시간당 진척이 높은 경로",
+    description: "과제별 지급 경험치가 아직 확인되지 않아 현재는 '가장 빠른 경로'와 동일하다",
+  },
   balanced: { label: "균형 경로", description: "시간·대기·위험을 동일 가중치로 정규화한 합산 순" },
 };
 
@@ -43,10 +46,10 @@ function retry(q: Quest): number {
   return q.retryRate ?? UNKNOWN_RETRY_FALLBACK;
 }
 
-// 각 전략은 남은 Level5 기여 과제를 서로 다른 기준으로 정렬한 explainable heuristic이다.
+// 각 전략은 남은 과제(선행조건 없음, 자유 선택)를 서로 다른 기준으로 정렬한 explainable heuristic이다.
 // ML/최적화 솔버가 아니라 표본 규모에 맞는 가장 단순한 방법을 우선한다 (brief 11항).
 export function buildStrategyPaths(quests: Quest[], member: Member): StrategyPath[] {
-  const remaining = remainingLevel5Quests(quests, member);
+  const remaining = remainingQuests(quests, member);
   if (remaining.length === 0) return [];
 
   const hoursRange = [
@@ -60,7 +63,7 @@ export function buildStrategyPaths(quests: Quest[], member: Member): StrategyPat
     fastest: sortedBy(remaining, (q) => q.officialLearningHours + wait(q)),
     safest: sortedBy(remaining, (q) => retry(q) * 100 + (q.sampleSize < 10 ? 20 : 0)),
     low_wait: sortedBy(remaining, wait),
-    efficient: sortedBy(remaining, (q) => q.officialLearningHours + wait(q)), // value 동일(모두 Level5 기여)하므로 비용 최소화와 동치
+    efficient: sortedBy(remaining, (q) => q.officialLearningHours + wait(q)), // 과제별 경험치 미확인 — 비용 최소화로 대체
     balanced: sortedBy(
       remaining,
       (q) =>

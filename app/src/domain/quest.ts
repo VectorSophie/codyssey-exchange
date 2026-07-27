@@ -24,8 +24,6 @@ export interface Quest {
   sampleSize: number;
   recentChangePct: number; // 실제 두 스냅샷(약 6일 간격) 완료건수 diff 기반
   avgWaitHours: number | null; // 같은 트랙 실제 평가 이벤트의 실측 평균 처리시간(요청→처리) — 과제 단위가 아니라 트랙 단위 근사
-  unlocks: string[]; // 같은 트랙 내 커리큘럼 순번(uqstnSqnt) 기준 추정 선행순서 — 공식 의존성 API 아님
-  level5Contribution: boolean; // required 필드 기반 근사치 — 공식 Level5 조건 매핑 아직 미확인
 }
 
 export const CONFIDENCE_LABEL: Record<Confidence, string> = {

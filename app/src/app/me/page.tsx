@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { realQuests, getQuestById } from "@/data/real-quests";
 import { mockMember } from "@/data/mock-member";
-import { remainingLevel5Quests } from "@/domain/progress";
+import { remainingQuests } from "@/domain/progress";
 import { buildStrategyPaths } from "@/domain/optimizer";
 import { readRealMeFile } from "@/lib/real-me";
 
 export default function MyStrategyPage() {
   const member = mockMember;
-  const remaining = remainingLevel5Quests(realQuests, member);
+  const remaining = remainingQuests(realQuests, member);
   const strategies = buildStrategyPaths(realQuests, member);
   const realMe = readRealMeFile();
 
@@ -45,9 +45,11 @@ export default function MyStrategyPage() {
       </section>
 
       <section className="mt-8">
-        <h2 className="text-sm font-medium text-neutral-700">Level 5 시험까지 남은 과제</h2>
+        <h2 className="text-sm font-medium text-neutral-700">남은 과제 ({remaining.length}개)</h2>
         <p className="mt-1 text-xs text-neutral-500">
-          &ldquo;Level 5 시험 응시 조건&rdquo;은 공식 필드로 확인되지 않아, 남은 Level5 기여 과제 완료 여부로 근사한다 (추정).
+          과제 간 선행조건은 없어 순서 상관없이 선택 가능하다. 과제별 정확한 지급 경험치는 아직 확인되지 않아
+          완료 시 레벨업 기여도는 명시하지 않는다 — <Link href="/level-exam" className="underline">레벨과 시험</Link>
+          의 미션 단계별 경험치 표(일부 미확인) 참고.
         </p>
         <div className="mt-2 overflow-hidden rounded-sm border border-border bg-surface shadow-sm">
           <table className="w-full border-collapse text-sm">
