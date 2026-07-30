@@ -9,7 +9,7 @@ export function QuestTicker({ quest, label }: { quest: Quest; label: string }) {
   const total = quest.states.notStarted + quest.states.inProgress + quest.states.evalWaiting + quest.states.completed;
   const bottleneck = bottleneckIndex(quest);
   const segments = [
-    { key: "notStarted", value: quest.states.notStarted, className: "bg-neutral-200" },
+    { key: "notStarted", value: quest.states.notStarted, className: "bg-neutral-200 dark:bg-neutral-700" },
     { key: "inProgress", value: quest.states.inProgress, className: "bg-blue-400" },
     { key: "evalWaiting", value: quest.states.evalWaiting, className: "bg-amber-400" },
     { key: "completed", value: quest.states.completed, className: "bg-emerald-500" },
@@ -18,11 +18,11 @@ export function QuestTicker({ quest, label }: { quest: Quest; label: string }) {
   return (
     <Link
       href={`/quests/${quest.id}`}
-      className="block rounded-sm border border-border bg-surface p-4 shadow-sm hover:border-neutral-400"
+      className="block rounded-sm border border-border bg-surface p-4 shadow-sm hover:border-neutral-400 dark:hover:border-neutral-600"
     >
-      <div className="text-[10px] uppercase tracking-wide text-neutral-400">{label}</div>
-      <div className="mt-1 truncate text-sm font-semibold text-neutral-900">{quest.name}</div>
-      <div className="mt-0.5 truncate text-xs text-neutral-500">{quest.track}</div>
+      <div className="text-[10px] uppercase tracking-wide text-neutral-400 dark:text-neutral-500">{label}</div>
+      <div className="mt-1 truncate text-sm font-semibold text-neutral-900 dark:text-neutral-100">{quest.name}</div>
+      <div className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">{quest.track}</div>
 
       <div className="mt-3 flex h-2 overflow-hidden rounded-[2px]">
         {segments.map((s) => (
@@ -32,8 +32,8 @@ export function QuestTicker({ quest, label }: { quest: Quest; label: string }) {
 
       <div className="mt-3 flex items-baseline justify-between">
         <div>
-          <span className="text-lg font-semibold tabular-nums">{bottleneck}</span>
-          <span className="ml-1 text-[10px] text-neutral-400">병목지수</span>
+          <span className="text-lg font-semibold tabular-nums dark:text-neutral-100">{bottleneck}</span>
+          <span className="ml-1 text-[10px] text-neutral-400 dark:text-neutral-500">병목지수</span>
         </div>
         <ChangeValue pct={quest.recentChangePct} />
       </div>

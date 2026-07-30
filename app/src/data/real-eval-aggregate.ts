@@ -1,33 +1,49 @@
-// 실제 데이터. codyssey_EV_Tracker 공개 저장소(docs/data/2026-05~07.json, PUBLIC repo)를
-// 시간대x요일 카운트로 집계한 결과만 반영한다. 원본의 실명/mbrId/평가 코멘트는
-// 이 파일에 포함하지 않는다 — privacy-threat-model.md 원칙에 따라 집계만 가져온다.
-// 재생성: scripts는 커밋하지 않은 1회성 로컬 스크립트로 실행, 이 파일만 산출물로 반영.
-export const realEvalAggregate = {
-  source: "codyssey_EV_Tracker (public) docs/data 2026-05~07 — PII 제거, 집계만",
-  generatedAt: "2026-07-26T09:16:40.598Z",
-  totalEvents: 1105,
-  totalCompleted: 889,
-  totalCancelled: 3,
-  totalRequested: 210,
-  totalInProgress: 3,
-  dayLabels: ["일", "월", "화", "수", "목", "금", "토"],
-  // [요일(0=일)][시간(0~23)] = 건수
-  demandByDayHour: [
-    [2, 2, 0, 0, 0, 1, 2, 1, 3, 2, 0, 2, 6, 12, 5, 10, 13, 13, 7, 12, 18, 1, 1, 1],
-    [2, 0, 1, 1, 0, 0, 0, 0, 1, 2, 3, 3, 3, 5, 17, 10, 20, 17, 9, 17, 11, 3, 2, 2],
-    [1, 0, 0, 2, 1, 0, 0, 0, 6, 2, 4, 11, 6, 12, 7, 13, 13, 25, 13, 5, 12, 7, 5, 1],
-    [3, 0, 0, 2, 2, 0, 0, 1, 2, 3, 4, 7, 3, 10, 13, 4, 14, 6, 9, 18, 10, 7, 5, 3],
-    [3, 4, 0, 1, 2, 1, 0, 1, 0, 3, 4, 2, 4, 9, 12, 12, 11, 21, 9, 10, 6, 5, 9, 6],
-    [1, 2, 2, 2, 2, 0, 0, 2, 1, 0, 5, 3, 4, 12, 8, 9, 10, 9, 10, 14, 16, 14, 3, 5],
-    [0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 5, 5, 8, 10, 9, 18, 5, 8, 12, 6, 8, 5, 1],
-  ],
-  supplyByDayHour: [
-    [2, 2, 2, 0, 0, 0, 1, 3, 2, 2, 2, 2, 0, 3, 12, 6, 9, 15, 12, 6, 14, 12, 6, 1],
-    [1, 2, 0, 1, 0, 0, 0, 0, 2, 2, 2, 5, 3, 4, 5, 12, 12, 20, 12, 9, 11, 13, 4, 2],
-    [1, 2, 0, 0, 0, 1, 0, 0, 0, 5, 3, 2, 5, 5, 12, 9, 19, 12, 19, 13, 7, 13, 7, 3],
-    [3, 2, 0, 0, 2, 2, 0, 0, 1, 1, 3, 7, 3, 9, 8, 12, 8, 9, 9, 12, 17, 12, 8, 2],
-    [3, 2, 2, 2, 0, 1, 1, 0, 1, 3, 3, 1, 3, 5, 7, 11, 11, 10, 16, 15, 11, 7, 6, 2],
-    [5, 3, 1, 3, 2, 0, 0, 1, 3, 2, 1, 1, 3, 4, 14, 14, 11, 10, 7, 15, 16, 18, 15, 3],
-    [5, 0, 1, 0, 1, 0, 1, 1, 1, 1, 2, 2, 4, 5, 5, 11, 10, 13, 8, 5, 12, 6, 13, 3],
-  ],
-};
+import type { EvalMarketAggregate } from "@/domain/evaluation";
+import { sql } from "@/lib/db";
+
+// 실제 데이터, Postgres 조회. 원본은 codyssey_EV_Tracker(공개 저장소) 3개월치 이벤트를
+// 시간대x요일로 집계한 것(PII 제거) — db/seed/eval-aggregate.json으로 커밋되어 있고
+// scripts/seed-db.mjs로 DB에 반영한다. 앱은 DB만 읽는다.
+
+interface MetaRow {
+  source: string;
+  generated_at: Date;
+  total_events: number;
+  total_completed: number;
+  total_cancelled: number;
+  total_requested: number;
+  total_in_progress: number;
+  day_labels: string[];
+}
+
+interface CellRow {
+  day_of_week: number;
+  hour: number;
+  demand: number;
+  supply: number;
+}
+
+export async function getRealEvalAggregate(): Promise<EvalMarketAggregate> {
+  const [meta] = await sql<MetaRow[]>`select * from eval_aggregate_meta limit 1`;
+  const cells = await sql<CellRow[]>`select * from eval_aggregate_cells`;
+
+  const demandByDayHour: number[][] = Array.from({ length: 7 }, () => Array(24).fill(0));
+  const supplyByDayHour: number[][] = Array.from({ length: 7 }, () => Array(24).fill(0));
+  for (const c of cells) {
+    demandByDayHour[c.day_of_week][c.hour] = c.demand;
+    supplyByDayHour[c.day_of_week][c.hour] = c.supply;
+  }
+
+  return {
+    source: meta.source,
+    generatedAt: meta.generated_at.toISOString(),
+    totalEvents: meta.total_events,
+    totalCompleted: meta.total_completed,
+    totalCancelled: meta.total_cancelled,
+    totalRequested: meta.total_requested,
+    totalInProgress: meta.total_in_progress,
+    dayLabels: meta.day_labels,
+    demandByDayHour,
+    supplyByDayHour,
+  };
+}

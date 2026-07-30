@@ -28,20 +28,20 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               <span className="inline-block h-4 w-1 rounded-[1px] bg-red-600" aria-hidden />
               Codyssey Exchange
             </Link>
-            <nav className="flex gap-5 text-sm text-neutral-600">
-              <Link href="/" className="hover:text-neutral-900">
+            <nav className="flex gap-5 text-sm text-neutral-600 dark:text-neutral-400">
+              <Link href="/" className="hover:text-neutral-900 dark:hover:text-neutral-100">
                 시장 개요
               </Link>
-              <Link href="/quests" className="hover:text-neutral-900">
+              <Link href="/quests" className="hover:text-neutral-900 dark:hover:text-neutral-100">
                 과제 시세
               </Link>
-              <Link href="/eval-market" className="hover:text-neutral-900">
+              <Link href="/eval-market" className="hover:text-neutral-900 dark:hover:text-neutral-100">
                 평가 시장
               </Link>
-              <Link href="/me" className="hover:text-neutral-900">
+              <Link href="/me" className="hover:text-neutral-900 dark:hover:text-neutral-100">
                 내 전략
               </Link>
-              <Link href="/level-exam" className="hover:text-neutral-900">
+              <Link href="/level-exam" className="hover:text-neutral-900 dark:hover:text-neutral-100">
                 레벨과 시험
               </Link>
             </nav>

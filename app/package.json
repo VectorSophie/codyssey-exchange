@@ -6,10 +6,14 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:seed": "node scripts/seed-db.mjs",
+    "refresh:quests": "node scripts/refresh-quests.mjs",
+    "refresh:eval": "node scripts/refresh-eval-aggregate.mjs"
   },
   "dependencies": {
     "next": "^16.2.12",
+    "postgres": "^3.4.9",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },

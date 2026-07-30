@@ -1,227 +1,67 @@
 import type { Quest } from "@/domain/quest";
+import { sql } from "@/lib/db";
 
-// 실제 데이터. codyssey_Quest_Tracker(공개 저장소) docs/data/current.json 스냅샷을 기반으로 한다.
+// 실제 데이터, Postgres 조회. scripts/refresh-quests.mjs가 매일 codyssey_Quest_Tracker(공개 저장소)
+// docs/data/current.json에서 새로 받아 이 테이블을 갱신한다. 앱은 DB만 읽는다.
 // - name/track/course/required/officialLearningHours/states/passCount/failCount/sampleSize: Confirmed by API
-// - recentChangePct: 실제 두 스냅샷(2026-07-20 → 2026-07-26, 약 6일 간격) 완료건수 diff — Confirmed by API(관측)
-// - avgWaitHours: codyssey_EV_Tracker(공개 저장소) 실제 이벤트에서 requestedAt→slotDateTime 간격을
-//   같은 트랙(trackName=lcorsNm) 기준으로 평균낸 값 — 과제 단위가 아니라 트랙 단위 근사(Observed)
-// - unlocks: 같은 트랙 내 커리큘럼 순번(uqstnSqnt) 기준 추정 — 공식 의존성 API 없음(Inferred)
-// - level5Contribution: requiredYn 필드를 근사치로 사용 — 공식 Level5 조건 매핑 아직 미확인(Inferred)
-// 재생성: scripts는 커밋하지 않은 1회성 로컬 스크립트로 실행, 이 파일만 산출물로 반영.
-export const dataGeneratedAt = "2026-07-26T05:04:35.980Z";
-export const dataPrevSnapshotAt = "2026-07-20T13:40:09.143Z";
+// - recentChangePct: quest_completed_history 7일 롤링 윈도 diff — Confirmed by API(관측)
+// - avgWaitHours: codyssey_EV_Tracker 실제 이벤트를 같은 트랙 기준으로 평균낸 값 — 과제 단위가 아니라 트랙 단위 근사(Observed),
+//   scripts/refresh-eval-aggregate.mjs가 주간 단위로 갱신한다.
 
-export const realQuests: Quest[] = [
-  {
-    id: "q185006",
-    name: "나만의 용돈 기입장 프로그램 만들기",
-    track: "Python과 Git 심화 (Python & Git advanced)",
-    course: "AI/SW 기초 (AI/SW Basic)",
-    required: true,
-    officialLearningHours: 1,
-    states: { notStarted: 113, inProgress: 11, evalWaiting: 5, completed: 21 },
-    passCount: 17,
-    failCount: 4,
-    passRate: 0.81,
-    retryRate: 0.19,
-    sampleSize: 150,
-    recentChangePct: 16.7,
-    avgWaitHours: 2.7,
-  },
-  {
-    id: "q185007",
-    name: "친구 3~5명과 함께 프로그램 만드는 법 연습하기",
-    track: "Python과 Git 심화 (Python & Git advanced)",
-    course: "AI/SW 기초 (AI/SW Basic)",
-    required: true,
-    officialLearningHours: 0.3,
-    states: { notStarted: 116, inProgress: 0, evalWaiting: 0, completed: 34 },
-    passCount: 34,
-    failCount: 0,
-    passRate: 1,
-    retryRate: 0,
-    sampleSize: 150,
-    recentChangePct: 0,
-    avgWaitHours: 2.7,
-  },
-  {
-    id: "q185004",
-    name: "컴퓨터가 알아서 자기 상태를 점검하게 만들기",
-    track: "Linux와 OS (Linux & OS)",
-    course: "AI/SW 기초 (AI/SW Basic)",
-    required: true,
-    officialLearningHours: 0.7,
-    states: { notStarted: 42, inProgress: 17, evalWaiting: 10, completed: 81 },
-    passCount: 71,
-    failCount: 10,
-    passRate: 0.877,
-    retryRate: 0.123,
-    sampleSize: 150,
-    recentChangePct: 0,
-    avgWaitHours: 4.3,
-  },
-  {
-    id: "q185005",
-    name: "컴퓨터가 갑자기 느려지거나 멈췄을 때 원인 찾아 고치기",
-    track: "Linux와 OS (Linux & OS)",
-    course: "AI/SW 기초 (AI/SW Basic)",
-    required: true,
-    officialLearningHours: 0.7,
-    states: { notStarted: 90, inProgress: 11, evalWaiting: 11, completed: 38 },
-    passCount: 33,
-    failCount: 5,
-    passRate: 0.868,
-    retryRate: 0.132,
-    sampleSize: 150,
-    recentChangePct: 5.6,
-    avgWaitHours: 4.3,
-  },
-  {
-    id: "q185012",
-    name: "정보를 깔끔하게 정리하는 디지털 서랍장 만들기",
-    track: "데이터베이스와 백엔드 (Database & Back-end)",
-    course: "AI/SW 기초 (AI/SW Basic)",
-    required: true,
-    officialLearningHours: 0.7,
-    states: { notStarted: 94, inProgress: 8, evalWaiting: 8, completed: 40 },
-    passCount: 34,
-    failCount: 6,
-    passRate: 0.85,
-    retryRate: 0.15,
-    sampleSize: 150,
-    recentChangePct: 21.2,
-    avgWaitHours: 2.9,
-  },
-  {
-    id: "q185013",
-    name: "글을 쓰고·보고·고치고·지울 수 있는 게시판형 웹 서비스 만들기",
-    track: "데이터베이스와 백엔드 (Database & Back-end)",
-    course: "AI/SW 기초 (AI/SW Basic)",
-    required: false,
-    officialLearningHours: 1,
-    states: { notStarted: 140, inProgress: 4, evalWaiting: 2, completed: 4 },
-    passCount: 4,
-    failCount: 0,
-    passRate: 1,
-    retryRate: 0,
-    sampleSize: 150,
-    recentChangePct: 33.3,
-    avgWaitHours: 2.9,
-  },
-  {
-    id: "q185014",
-    name: "로그인이 되고 회원끼리 연결되는 웹 서비스 만들기",
-    track: "데이터베이스와 백엔드 (Database & Back-end)",
-    course: "AI/SW 기초 (AI/SW Basic)",
-    required: false,
-    officialLearningHours: 1,
-    states: { notStarted: 143, inProgress: 6, evalWaiting: 1, completed: 0 },
-    passCount: 0,
-    failCount: 0,
-    passRate: null,
-    retryRate: null,
-    sampleSize: 150,
-    recentChangePct: 0,
-    avgWaitHours: 2.9,
-  },
-  {
-    id: "q185010",
-    name: "나를 소개하는 웹페이지 처음부터 만들기",
-    track: "웹 기초와 프론트엔드 (Web Core & Front-end)",
-    course: "AI/SW 기초 (AI/SW Basic)",
-    required: true,
-    officialLearningHours: 1.3,
-    states: { notStarted: 106, inProgress: 10, evalWaiting: 5, completed: 29 },
-    passCount: 25,
-    failCount: 4,
-    passRate: 0.862,
-    retryRate: 0.138,
-    sampleSize: 150,
-    recentChangePct: 7.4,
-    avgWaitHours: 7.9,
-  },
-  {
-    id: "q185011",
-    name: "버튼 누르면 화면이 스르륵 바뀌는 요즘 웹사이트 만들기",
-    track: "웹 기초와 프론트엔드 (Web Core & Front-end)",
-    course: "AI/SW 기초 (AI/SW Basic)",
-    required: false,
-    officialLearningHours: 1.3,
-    states: { notStarted: 142, inProgress: 4, evalWaiting: 2, completed: 2 },
-    passCount: 1,
-    failCount: 1,
-    passRate: 0.5,
-    retryRate: 0.5,
-    sampleSize: 150,
-    recentChangePct: 0,
-    avgWaitHours: 7.9,
-  },
-  {
-    id: "q185015",
-    name: "내가 만든 웹사이트를 인터넷에 올려 누구나 쓰게 하기",
-    track: "클라우드와 AI API (Cloud & AI API)",
-    course: "AI/SW 기초 (AI/SW Basic)",
-    required: true,
-    officialLearningHours: 0.7,
-    states: { notStarted: 137, inProgress: 3, evalWaiting: 2, completed: 8 },
-    passCount: 6,
-    failCount: 2,
-    passRate: 0.75,
-    retryRate: 0.25,
-    sampleSize: 150,
-    recentChangePct: 14.3,
-    avgWaitHours: 1.8,
-  },
-  {
-    id: "q185016",
-    name: "내가 고친 코드 설명을 AI가 대신 써주는 도우미 만들기",
-    track: "클라우드와 AI API (Cloud & AI API)",
-    course: "AI/SW 기초 (AI/SW Basic)",
-    required: true,
-    officialLearningHours: 0.7,
-    states: { notStarted: 135, inProgress: 6, evalWaiting: 1, completed: 8 },
-    passCount: 7,
-    failCount: 1,
-    passRate: 0.875,
-    retryRate: 0.125,
-    sampleSize: 150,
-    recentChangePct: -11.1,
-    avgWaitHours: 1.8,
-  },
-  {
-    id: "q185008",
-    name: "정보를 엄청 빠르게 찾아주는 작은 저장소 만들기",
-    track: "자료구조와 알고리즘 (Data Structures & Algorithms)",
-    course: "AI/SW 기초 (AI/SW Basic)",
-    required: true,
-    officialLearningHours: 1.3,
-    states: { notStarted: 129, inProgress: 2, evalWaiting: 3, completed: 16 },
-    passCount: 13,
-    failCount: 3,
-    passRate: 0.813,
-    retryRate: 0.188,
-    sampleSize: 150,
-    recentChangePct: 6.7,
-    avgWaitHours: 8,
-  },
-  {
-    id: "q185009",
-    name: "파일이 언제 어떻게 바뀌었는지 기록하는 작은 프로그램 만들기",
-    track: "자료구조와 알고리즘 (Data Structures & Algorithms)",
-    course: "AI/SW 기초 (AI/SW Basic)",
-    required: true,
-    officialLearningHours: 1.3,
-    states: { notStarted: 137, inProgress: 4, evalWaiting: 0, completed: 9 },
-    passCount: 8,
-    failCount: 1,
-    passRate: 0.889,
-    retryRate: 0.111,
-    sampleSize: 150,
-    recentChangePct: 28.6,
-    avgWaitHours: 8,
-  },
-];
+interface QuestRow {
+  id: string;
+  name: string;
+  track: string;
+  course: string;
+  required: boolean;
+  official_learning_hours: string;
+  not_started: number;
+  in_progress: number;
+  eval_waiting: number;
+  completed: number;
+  pass_count: number;
+  fail_count: number;
+  pass_rate: string | null;
+  retry_rate: string | null;
+  sample_size: number;
+  recent_change_pct: string;
+  avg_wait_hours: string | null;
+  data_generated_at: Date;
+}
 
-export function getQuestById(id: string): Quest | undefined {
-  return realQuests.find((q) => q.id === id);
+function toQuest(r: QuestRow): Quest {
+  return {
+    id: r.id,
+    name: r.name,
+    track: r.track,
+    course: r.course,
+    required: r.required,
+    officialLearningHours: Number(r.official_learning_hours),
+    states: {
+      notStarted: r.not_started,
+      inProgress: r.in_progress,
+      evalWaiting: r.eval_waiting,
+      completed: r.completed,
+    },
+    passCount: r.pass_count,
+    failCount: r.fail_count,
+    passRate: r.pass_rate === null ? null : Number(r.pass_rate),
+    retryRate: r.retry_rate === null ? null : Number(r.retry_rate),
+    sampleSize: r.sample_size,
+    recentChangePct: Number(r.recent_change_pct),
+    avgWaitHours: r.avg_wait_hours === null ? null : Number(r.avg_wait_hours),
+  };
+}
+
+export async function getRealQuests(): Promise<{ quests: Quest[]; dataGeneratedAt: string }> {
+  const rows = await sql<QuestRow[]>`select * from quests order by id`;
+  return {
+    quests: rows.map(toQuest),
+    dataGeneratedAt: rows[0]?.data_generated_at.toISOString() ?? new Date(0).toISOString(),
+  };
+}
+
+export async function getQuestById(id: string): Promise<Quest | undefined> {
+  const rows = await sql<QuestRow[]>`select * from quests where id = ${id}`;
+  return rows[0] ? toQuest(rows[0]) : undefined;
 }

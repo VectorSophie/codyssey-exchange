@@ -30,7 +30,7 @@ export function SupplyDemandChart({ demand, supply }: { demand: number[]; supply
     return {
       key: h,
       points: `${x1},${d1} ${x2},${d2} ${x2},${s2} ${x1},${s1}`,
-      fill: deficit ? "rgba(217,119,6,0.14)" : "rgba(16,185,129,0.12)",
+      fill: deficit ? "rgba(220,38,38,0.12)" : "rgba(37,99,235,0.10)",
     };
   });
 
@@ -40,22 +40,29 @@ export function SupplyDemandChart({ demand, supply }: { demand: number[]; supply
     <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="w-full" role="img" aria-label="시간대별 수요/공급 추이">
       {yTicks.map((t) => (
         <g key={t}>
-          <line x1={PAD_L} x2={WIDTH - PAD_R} y1={yAt(t, max)} y2={yAt(t, max)} stroke="#e3e5e9" strokeWidth={1} />
-          <text x={4} y={yAt(t, max) + 3} fontSize={10} fill="#8a8f98">
+          <line
+            x1={PAD_L}
+            x2={WIDTH - PAD_R}
+            y1={yAt(t, max)}
+            y2={yAt(t, max)}
+            stroke="var(--grid-line)"
+            strokeWidth={1}
+          />
+          <text x={4} y={yAt(t, max) + 3} fontSize={10} fill="var(--axis-text)">
             {t}
           </text>
         </g>
       ))}
       {[0, 6, 12, 18, 23].map((h) => (
-        <text key={h} x={xAt(h)} y={HEIGHT - 8} fontSize={10} fill="#8a8f98" textAnchor="middle">
+        <text key={h} x={xAt(h)} y={HEIGHT - 8} fontSize={10} fill="var(--axis-text)" textAnchor="middle">
           {h}시
         </text>
       ))}
       {segments.map((s) => (
         <polygon key={s.key} points={s.points} fill={s.fill} />
       ))}
-      <polyline points={supplyPoints} fill="none" stroke="#9ca3af" strokeWidth={2} />
-      <polyline points={demandPoints} fill="none" stroke="#171717" strokeWidth={2} />
+      <polyline points={supplyPoints} fill="none" stroke="#2563eb" strokeWidth={2} />
+      <polyline points={demandPoints} fill="none" stroke="#dc2626" strokeWidth={2} />
     </svg>
   );
 }

@@ -1,0 +1,45 @@
+name: db-check
+
+on:
+  push:
+    paths:
+      - "db/**"
+      - "app/scripts/seed-db.mjs"
+      - "app/src/data/**"
+      - "app/package-lock.json"
+  workflow_dispatch:
+
+jobs:
+  seed-and-typecheck:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: codyssey
+          POSTGRES_PASSWORD: codyssey
+          POSTGRES_DB: codyssey_exchange
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U codyssey"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://codyssey:codyssey@localhost:5432/codyssey_exchange
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - working-directory: app
+        run: npm ci
+      - name: db/schema.sql + db/seed 적재 검증
+        working-directory: app
+        run: node scripts/seed-db.mjs
+      - name: 타입체크 (DB 조회 코드 포함)
+        working-directory: app
+        run: npx tsc --noEmit
