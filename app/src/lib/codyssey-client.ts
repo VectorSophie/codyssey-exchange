@@ -55,8 +55,7 @@ export async function fetchRealMember(sessionOverride?: string | null): Promise<
 }
 
 // Member 타입에 매핑 가능한 필드만 뽑는다. 완료/진행중 과제 목록은 questStatus에서 온 uqstnNo를
-// "q" + uqstnNo 형식(quests 테이블 id 규칙)으로 변환한다. levelRegDt(현재 레벨 도달 시각)는 Member
-// 타입에는 없지만 실화면에 없는 유용한 확인 정보라 별도 필드로 얹어 반환한다.
+// "q" + uqstnNo 형식(quests 테이블 id 규칙)으로 변환한다.
 export function mapRealMember(
   snapshot: RealMemberSnapshot
 ):
@@ -70,7 +69,7 @@ export function mapRealMember(
       | "inProgressQuestIds"
       | "level5ExamEligible"
       | "level5ExamConfidence"
-    > & { nextLevelExp: number; levelReachedAt: string | null })
+    > & { nextLevelExp: number })
   | null {
   const profileResult = (snapshot.profile as { result?: { mbrNm?: unknown } } | null)?.result;
   const pnt = (snapshot.pointTotal as { result?: Record<string, unknown> } | null)?.result;
@@ -81,8 +80,6 @@ export function mapRealMember(
   const points = Number(pnt.pnt);
   const nextLevelExp = Number(pnt.nextLvlRequiredExprc);
   if ([level, exp, points, nextLevelExp].some(Number.isNaN)) return null;
-
-  const levelReachedAt = typeof pnt.levelRegDt === "string" ? pnt.levelRegDt : null;
 
   const uqstns = (snapshot.questStatus as { result?: { uqstns?: unknown } } | null)?.result?.uqstns;
   const completedQuestIds: string[] = [];
@@ -111,7 +108,6 @@ export function mapRealMember(
     inProgressQuestIds,
     level5ExamEligible,
     level5ExamConfidence,
-    levelReachedAt,
   };
 }
 
