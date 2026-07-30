@@ -67,6 +67,12 @@ export default async function LevelExamPage() {
               경험치 {member.exp.toLocaleString()}
               {realFields && `  (다음 레벨까지 ${realFields.nextLevelExp.toLocaleString()})`}
             </div>
+            {realFields?.levelReachedAt && (
+              <div className="mt-1 flex items-center gap-1.5 text-xs text-neutral-400 dark:text-neutral-500">
+                <span>Lv.{member.level} 도달일 {realFields.levelReachedAt.slice(0, 10)}</span>
+                <ConfidenceBadge level="confirmed_api" />
+              </div>
+            )}
           </div>
           <div className="text-right">
             <div className="text-sm font-medium dark:text-neutral-200">Level 5 시험 응시 가능 여부</div>
