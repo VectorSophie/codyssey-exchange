@@ -13,7 +13,7 @@ import {
   LEVEL_DISTRIBUTION_CONFIDENCE,
 } from "@/domain/leveling";
 import { ConfidenceBadge } from "@/components/ConfidenceBadge";
-import { fetchRealMember } from "@/lib/codyssey-client";
+import { fetchRealMember, mapProfileToMember } from "@/lib/codyssey-client";
 import { SessionPrompt } from "@/components/SessionPrompt";
 
 const STATUS_STYLE: Record<NodeStatus, string> = {
@@ -26,12 +26,13 @@ export const revalidate = 0; // 실제 세션 연동은 매 요청 최신 상태
 
 export default async function LevelExamPage() {
   const { quests: realQuests } = await getRealQuests();
-  const member = mockMember;
-  const nodes = realQuests.map((q) => ({ quest: q, status: questStatus(q, member) }));
-  const maxDistCount = Math.max(...OBSERVED_LEVEL_DISTRIBUTION.map((d) => d.count));
   const cookieStore = await cookies();
   const visitorSession = cookieStore.get("codyssey_session")?.value ?? null;
   const realMember = await fetchRealMember(visitorSession);
+  const realProfile = realMember ? mapProfileToMember(realMember.profile) : null;
+  const member = realProfile ? { ...mockMember, ...realProfile } : mockMember;
+  const nodes = realQuests.map((q) => ({ quest: q, status: questStatus(q, member) }));
+  const maxDistCount = Math.max(...OBSERVED_LEVEL_DISTRIBUTION.map((d) => d.count));
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-8">
@@ -46,8 +47,10 @@ export default async function LevelExamPage() {
       ) : (
         <div className="mt-3 rounded-sm border border-violet-200 bg-violet-50 px-3 py-2 text-xs text-violet-800 dark:border-violet-900 dark:bg-violet-950/40 dark:text-violet-300">
           <p>
-            실제 세션 연동됨 (조회 {realMember.fetchedAt.slice(0, 19)}) — 응답 필드 구조가 아직 검증되지 않아 아래
-            레벨·경험치·진행 상태는 여전히 데모 예시입니다.
+            실제 세션 연동됨 (조회 {realMember.fetchedAt.slice(0, 19)}) —{" "}
+            {realProfile
+              ? "경험치·닉네임은 본인 데이터입니다. 레벨, 과제 진행 상태는 아직 매핑할 확인된 필드가 없어 데모 예시로 남아 있습니다(레벨 필드는 실사용자 검증 결과 화면 배지와 값이 달라 제외함)."
+              : "응답 구조가 예상과 달라 매핑에 실패했습니다 — 아래는 여전히 데모 예시입니다."}
           </p>
           <SessionPrompt hasSessionCookie={true} />
         </div>
