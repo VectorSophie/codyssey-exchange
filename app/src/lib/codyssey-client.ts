@@ -1,20 +1,25 @@
-// 읽기 전용 실시간 개인 데이터 연동. 본인 세션(CODYSSEY_SESSION, 서버 전용 env)으로 본인 데이터만
-// 매 요청마다 직접 조회한다 — 로그인 UI는 구현하지 않는다(브라우저에서 로그인 후 세션 쿠키를 복사해
-// .env/배포 시크릿에 붙여넣는 방식은 그대로 유지, docs/data-source-map.md 3단계 참고).
-// 쓰기 API 호출 없음. rest/user/info/detail 응답 필드는 실제 세션으로 확인됨(Confirmed by API) —
-// mapProfileToMember가 경험치/닉네임만 매핑한다. instList[0].level은 실사용자로 검증한 결과 화면의
-// "레벨" 배지와 다른 값이었다(실제 Lv.4인데 level 필드는 32) — 다른 의미의 카운터로 추정되며 무엇인지
-// 아직 확인되지 않아 매핑하지 않는다. 완료·진행중 과제 목록, 포인트, 시험 자격도 아직 매핑할 확인된
-// 필드가 없어 데모 페르소나로 남는다.
+// 읽기 전용 실시간 개인 데이터 연동. 본인 세션(CODYSSEY_SESSION, 서버 전용 env 또는 방문자 쿠키)으로
+// 본인 데이터만 매 요청마다 직접 조회한다 — 로그인 UI는 구현하지 않는다(브라우저에서 로그인 후 세션
+// 쿠키를 복사해 붙여넣는 방식은 그대로 유지, docs/data-source-map.md 3단계 참고).
+// 쓰기 API 호출 없음.
+//
+// 필드 출처(실사용자 세션으로 검증, 2026-07-30):
+// - rest/user/info/detail.result.mbrNm → 닉네임
+// - point/pnt/total/detail.result: level/exp/pnt/nextLvlRequiredExprc — 전부 실화면(대시보드 LEVEL/POINT
+//   배지)과 일치 확인됨. rest/user/info/detail.result.instList[0].level은 같은 화면의 레벨 배지와 값이
+//   달랐다(실제 Lv.4 계정에 level: "32") — 다른 의미의 카운터로 추정되며 사용하지 않는다.
+// - learning/learningProgress/status/list.result.uqstns[]: uqstnResultYn이 "PASS"면 완료, "평가전"이면
+//   제출 후 평가 대기(진행중으로 취급), null이면 미시작.
 import type { Member } from "@/domain/member";
+import type { Confidence } from "@/domain/quest";
 
 const API_BASE = "https://api.usr.codyssey.kr/";
 
 export interface RealMemberSnapshot {
   fetchedAt: string;
   profile: unknown;
-  examList: unknown;
-  examResults: unknown;
+  pointTotal: unknown;
+  questStatus: unknown;
 }
 
 async function fetchJson(path: string, method: "GET" | "POST", session: string): Promise<unknown> {
@@ -37,36 +42,128 @@ export async function fetchRealMember(sessionOverride?: string | null): Promise<
   if (!session) return null;
 
   try {
-    const [profile, examList, examResults] = await Promise.all([
+    const [profile, pointTotal, questStatus] = await Promise.all([
       fetchJson("rest/user/info/detail", "GET", session),
-      fetchJson("exam/usr/list", "POST", session).catch(() => null),
-      fetchJson("exam/usr/result/list", "POST", session).catch(() => null),
+      fetchJson("point/pnt/total/detail", "GET", session),
+      fetchJson("learning/learningProgress/status/list", "GET", session),
     ]);
-    return { fetchedAt: new Date().toISOString(), profile, examList, examResults };
+    return { fetchedAt: new Date().toISOString(), profile, pointTotal, questStatus };
   } catch (e) {
     console.error("실제 계정 연동 실패, 데모 페르소나로 폴백:", (e as Error).message);
     return null;
   }
 }
 
-// rest/user/info/detail의 result.instList[0].exp에서 경험치를, result.mbrNm에서 닉네임을 가져온다.
-// instList[0].level은 의도적으로 매핑하지 않는다 — 실사용자 검증 결과 화면 레벨 배지와 일치하지 않았다
-// (Lv.4 실사용자에게 level: "32"가 옴). 레벨은 여전히 데모 페르소나 값으로 남는다.
-// 응답 구조가 예상과 다르면(다른 기관 소속 등) null을 반환 — 호출부는 데모 페르소나 필드로 폴백한다.
-export function mapProfileToMember(profile: unknown): Pick<Member, "displayName" | "exp"> | null {
-  const result = (profile as { result?: unknown } | null)?.result as
-    | { mbrNm?: unknown; instList?: unknown }
-    | undefined;
-  if (!result) return null;
+// Member 타입에 매핑 가능한 필드만 뽑는다. 완료/진행중 과제 목록은 questStatus에서 온 uqstnNo를
+// "q" + uqstnNo 형식(quests 테이블 id 규칙)으로 변환한다. watchlistQuestIds(관심 과제)는 대응하는
+// API를 찾지 못해 항상 빈 배열이다 — 데모 값을 흉내내지 않고 정직하게 "없음"으로 둔다.
+export function mapRealMember(
+  snapshot: RealMemberSnapshot
+):
+  | (Pick<
+      Member,
+      | "displayName"
+      | "level"
+      | "exp"
+      | "points"
+      | "completedQuestIds"
+      | "inProgressQuestIds"
+      | "watchlistQuestIds"
+      | "level5ExamEligible"
+      | "level5ExamConfidence"
+    > & { nextLevelExp: number })
+  | null {
+  const profileResult = (snapshot.profile as { result?: { mbrNm?: unknown } } | null)?.result;
+  const pnt = (snapshot.pointTotal as { result?: Record<string, unknown> } | null)?.result;
+  if (!profileResult || !pnt) return null;
 
-  const inst = Array.isArray(result.instList) ? (result.instList[0] as { exp?: unknown }) : null;
-  if (!inst) return null;
+  const level = Number(pnt.level);
+  const exp = Number(pnt.exp);
+  const points = Number(pnt.pnt);
+  const nextLevelExp = Number(pnt.nextLvlRequiredExprc);
+  if ([level, exp, points, nextLevelExp].some(Number.isNaN)) return null;
 
-  const exp = Number(inst.exp);
-  if (Number.isNaN(exp)) return null;
+  const uqstns = (snapshot.questStatus as { result?: { uqstns?: unknown } } | null)?.result?.uqstns;
+  const completedQuestIds: string[] = [];
+  const inProgressQuestIds: string[] = [];
+  if (Array.isArray(uqstns)) {
+    for (const u of uqstns as { uqstnNo?: unknown; uqstnResultYn?: unknown }[]) {
+      if (u.uqstnNo === undefined) continue;
+      const id = `q${u.uqstnNo}`;
+      if (u.uqstnResultYn === "PASS") completedQuestIds.push(id);
+      else if (u.uqstnResultYn === "평가전") inProgressQuestIds.push(id);
+    }
+  }
+
+  // 5레벨 시험 응시 조건 자체(경험치 임계값만으로 충분한지, 별도 심사가 있는지)는 공식 확인되지 않았다 —
+  // 그래서 이 판정은 observed(실제 API 필드 기반이지만 규칙 자체는 미검증)로 표시한다.
+  const level5ExamEligible = level >= 5 || exp >= nextLevelExp;
+  const level5ExamConfidence: Confidence = "observed";
 
   return {
-    displayName: typeof result.mbrNm === "string" ? result.mbrNm : "본인 계정",
+    displayName: typeof profileResult.mbrNm === "string" ? profileResult.mbrNm : "본인 계정",
+    level,
     exp,
+    points,
+    nextLevelExp,
+    completedQuestIds,
+    inProgressQuestIds,
+    watchlistQuestIds: [],
+    level5ExamEligible,
+    level5ExamConfidence,
   };
+}
+
+export interface LevelDistributionEntry {
+  level: number;
+  count: number;
+}
+
+// 길드 랭킹 상세 화면에서 실사용자가 직접 확인하던 레벨 분포를, 같은 화면이 쓰는 API로 대체한다.
+// 시즌의 전체 길드를 순회해 members[].level만 집계하고 즉시 버린다 — 실명/이메일 등 개인정보는
+// 이 함수 밖으로 절대 나가지 않는다(docs/privacy-threat-model.md). 세션이 없거나 실패하면 null —
+// 호출부는 기존 관측 스냅샷(OBSERVED_LEVEL_DISTRIBUTION)으로 폴백한다.
+export async function fetchRealLevelDistribution(
+  sessionOverride?: string | null
+): Promise<LevelDistributionEntry[] | null> {
+  const session = sessionOverride || process.env.CODYSSEY_SESSION;
+  if (!session) return null;
+
+  try {
+    const season = (
+      (await fetchJson("guild/season/currentSeasonDetail", "GET", session)) as {
+        result: { guildSeasonId: number; currentWeekNo: number };
+      }
+    ).result;
+
+    const weekly = (
+      (await fetchJson(
+        `guild/ranking/weeklyList?guildSeasonId=${season.guildSeasonId}&weekNo=${season.currentWeekNo}`,
+        "GET",
+        session
+      )) as { result: { rankings: { guildId: number }[] } }
+    ).result;
+    const guildIds = weekly.rankings.map((r) => r.guildId);
+
+    const counts = new Map<number, number>();
+    for (const guildId of guildIds) {
+      const detail = (
+        (await fetchJson(
+          `guild/${guildId}/detail?guildSeasonId=${season.guildSeasonId}&weekNo=${season.currentWeekNo}`,
+          "GET",
+          session
+        )) as { result: { members: { level?: unknown }[] } }
+      ).result;
+      for (const m of detail.members) {
+        const level = Number(m.level);
+        if (Number.isNaN(level)) continue;
+        counts.set(level, (counts.get(level) ?? 0) + 1);
+      }
+    }
+
+    return [...counts.entries()].map(([level, count]) => ({ level, count })).sort((a, b) => a.level - b.level);
+  } catch (e) {
+    console.error("실제 레벨 분포 조회 실패, 관측 스냅샷으로 폴백:", (e as Error).message);
+    return null;
+  }
 }

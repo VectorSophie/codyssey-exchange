@@ -13,7 +13,7 @@ import {
   LEVEL_DISTRIBUTION_CONFIDENCE,
 } from "@/domain/leveling";
 import { ConfidenceBadge } from "@/components/ConfidenceBadge";
-import { fetchRealMember, mapProfileToMember } from "@/lib/codyssey-client";
+import { fetchRealMember, mapRealMember, fetchRealLevelDistribution } from "@/lib/codyssey-client";
 import { SessionPrompt } from "@/components/SessionPrompt";
 
 const STATUS_STYLE: Record<NodeStatus, string> = {
@@ -29,10 +29,14 @@ export default async function LevelExamPage() {
   const cookieStore = await cookies();
   const visitorSession = cookieStore.get("codyssey_session")?.value ?? null;
   const realMember = await fetchRealMember(visitorSession);
-  const realProfile = realMember ? mapProfileToMember(realMember.profile) : null;
-  const member = realProfile ? { ...mockMember, ...realProfile } : mockMember;
+  const realFields = realMember ? mapRealMember(realMember) : null;
+  const member = realFields ? { ...mockMember, ...realFields } : mockMember;
   const nodes = realQuests.map((q) => ({ quest: q, status: questStatus(q, member) }));
-  const maxDistCount = Math.max(...OBSERVED_LEVEL_DISTRIBUTION.map((d) => d.count));
+
+  const realDistribution = await fetchRealLevelDistribution(visitorSession);
+  const levelDistribution = realDistribution ?? OBSERVED_LEVEL_DISTRIBUTION;
+  const levelDistributionConfidence = realDistribution ? "confirmed_api" : LEVEL_DISTRIBUTION_CONFIDENCE;
+  const maxDistCount = Math.max(...levelDistribution.map((d) => d.count));
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-8">
@@ -48,8 +52,8 @@ export default async function LevelExamPage() {
         <div className="mt-3 rounded-sm border border-violet-200 bg-violet-50 px-3 py-2 text-xs text-violet-800 dark:border-violet-900 dark:bg-violet-950/40 dark:text-violet-300">
           <p>
             실제 세션 연동됨 (조회 {realMember.fetchedAt.slice(0, 19)}) —{" "}
-            {realProfile
-              ? "경험치·닉네임은 본인 데이터입니다. 레벨, 과제 진행 상태는 아직 매핑할 확인된 필드가 없어 데모 예시로 남아 있습니다(레벨 필드는 실사용자 검증 결과 화면 배지와 값이 달라 제외함)."
+            {realFields
+              ? "레벨·경험치·닉네임·과제 진행 상태는 본인 데이터입니다."
               : "응답 구조가 예상과 달라 매핑에 실패했습니다 — 아래는 여전히 데모 예시입니다."}
           </p>
           <SessionPrompt hasSessionCookie={true} />
@@ -62,6 +66,7 @@ export default async function LevelExamPage() {
             <div className="text-2xl font-semibold tabular-nums dark:text-neutral-100">Lv.{member.level}</div>
             <div className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
               경험치 {member.exp.toLocaleString()}
+              {realFields && `  (다음 레벨까지 ${realFields.nextLevelExp.toLocaleString()})`}
             </div>
           </div>
           <div className="text-right">
@@ -82,13 +87,15 @@ export default async function LevelExamPage() {
       <section className="mt-8">
         <div className="mb-2 flex items-center gap-2">
           <h2 className="text-sm font-medium text-neutral-700 dark:text-neutral-300">레벨 분포</h2>
-          <ConfidenceBadge level={LEVEL_DISTRIBUTION_CONFIDENCE} />
+          <ConfidenceBadge level={levelDistributionConfidence} />
         </div>
         <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-          특정 길드 기준 — 상위 레벨로 갈수록 급격히 줄어드는 피라미드 구조
+          {realDistribution
+            ? "이번 시즌 전체 길드 실시간 집계 — 상위 레벨로 갈수록 급격히 줄어드는 피라미드 구조"
+            : "특정 길드 기준(관측 스냅샷) — 상위 레벨로 갈수록 급격히 줄어드는 피라미드 구조"}
         </p>
         <div className="mt-3 space-y-2 rounded-sm border border-border bg-surface p-4 shadow-sm">
-          {OBSERVED_LEVEL_DISTRIBUTION.map((d) => (
+          {levelDistribution.map((d) => (
             <div key={d.level} className="flex items-center gap-3 text-sm">
               <span className="w-10 text-neutral-500 dark:text-neutral-400">Lv.{d.level}</span>
               <div className="h-3 flex-1 overflow-hidden rounded-[2px] bg-neutral-100 dark:bg-neutral-800">
@@ -127,11 +134,17 @@ export default async function LevelExamPage() {
         </div>
         <div className="mt-3 flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
           <span>레벨 도달 누적 경험치</span>
-          <ConfidenceBadge level={LEVEL_THRESHOLD_CONFIDENCE} />
+          <ConfidenceBadge level={realFields ? "confirmed_api" : LEVEL_THRESHOLD_CONFIDENCE} />
         </div>
         <p className="mt-1 text-xs text-neutral-400 dark:text-neutral-500">
-          Lv.4 {LEVEL_XP_THRESHOLD_HEARSAY[4]} · Lv.5 {LEVEL_XP_THRESHOLD_HEARSAY[5]} — 미션 표 합산(약 7,800)과는
-          차이가 있습니다.
+          {realFields ? (
+            <>다음 레벨(Lv.{member.level + 1})까지 {realFields.nextLevelExp.toLocaleString()} — 본인 데이터로 확인됨.</>
+          ) : (
+            <>
+              Lv.4 {LEVEL_XP_THRESHOLD_HEARSAY[4]} · Lv.5 {LEVEL_XP_THRESHOLD_HEARSAY[5]} — 미션 표 합산(약
+              7,800)과는 차이가 있습니다.
+            </>
+          )}
         </p>
       </section>
 

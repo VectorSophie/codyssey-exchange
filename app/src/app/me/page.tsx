@@ -5,7 +5,7 @@ import { getRealQuests } from "@/data/real-quests";
 import { mockMember } from "@/data/mock-member";
 import { remainingQuests } from "@/domain/progress";
 import { buildStrategyPaths } from "@/domain/optimizer";
-import { fetchRealMember, mapProfileToMember } from "@/lib/codyssey-client";
+import { fetchRealMember, mapRealMember } from "@/lib/codyssey-client";
 import { SessionPrompt } from "@/components/SessionPrompt";
 
 export const revalidate = 0; // 실제 세션 연동은 매 요청 최신 상태를 봐야 하므로 캐시하지 않는다.
@@ -15,8 +15,8 @@ export default async function MyStrategyPage() {
   const cookieStore = await cookies();
   const visitorSession = cookieStore.get("codyssey_session")?.value ?? null;
   const realMember = await fetchRealMember(visitorSession);
-  const realProfile = realMember ? mapProfileToMember(realMember.profile) : null;
-  const member = realProfile ? { ...mockMember, ...realProfile } : mockMember;
+  const realFields = realMember ? mapRealMember(realMember) : null;
+  const member = realFields ? { ...mockMember, ...realFields } : mockMember;
   const remaining = remainingQuests(realQuests, member);
   const strategies = buildStrategyPaths(realQuests, member);
 
@@ -34,8 +34,8 @@ export default async function MyStrategyPage() {
         <div className="mt-3 rounded-sm border border-violet-200 bg-violet-50 px-3 py-2 text-xs text-violet-800 dark:border-violet-900 dark:bg-violet-950/40 dark:text-violet-300">
           <p>
             실제 세션 연동됨 (조회 {realMember.fetchedAt.slice(0, 19)}) —{" "}
-            {realProfile
-              ? "경험치·닉네임은 본인 데이터입니다. 레벨, 완료/진행중 과제 목록, 포인트는 아직 매핑할 확인된 필드가 없어 데모 예시로 남아 있습니다(레벨 필드는 실사용자 검증 결과 화면 배지와 값이 달라 제외함)."
+            {realFields
+              ? "레벨·경험치·포인트·닉네임·완료/진행중 과제 목록은 본인 데이터입니다. 관심 과제는 대응하는 API를 찾지 못해 항상 비어 있고, 주간 가용시간은 Codyssey에 없는 개인 계획값이라 기본값을 씁니다."
               : "응답 구조가 예상과 달라 매핑에 실패했습니다 — 아래는 여전히 데모 예시입니다."}
           </p>
           <details className="mt-1">
