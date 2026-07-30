@@ -10,7 +10,6 @@ export interface Member {
   weeklyAvailableHours: number;
   completedQuestIds: string[];
   inProgressQuestIds: string[];
-  watchlistQuestIds: string[];
   level5ExamEligible: boolean;
   level5ExamConfidence: Confidence; // 응시 가능 여부 판정 자체의 신뢰도
 }

@@ -35,7 +35,7 @@ export default async function MyStrategyPage() {
           <p>
             실제 세션 연동됨 (조회 {realMember.fetchedAt.slice(0, 19)}) —{" "}
             {realFields
-              ? "레벨·경험치·포인트·닉네임·완료/진행중 과제 목록은 본인 데이터입니다. 관심 과제는 대응하는 API를 찾지 못해 항상 비어 있고, 주간 가용시간은 Codyssey에 없는 개인 계획값이라 기본값을 씁니다."
+              ? "레벨·경험치·포인트·닉네임·완료/진행중 과제 목록은 본인 데이터입니다. 주간 가용시간은 Codyssey에 없는 개인 계획값이라 기본값을 씁니다."
               : "응답 구조가 예상과 달라 매핑에 실패했습니다 — 아래는 여전히 데모 예시입니다."}
           </p>
           <details className="mt-1">
@@ -55,10 +55,9 @@ export default async function MyStrategyPage() {
         <Stat label="주간 가용시간" value={`${member.weeklyAvailableHours}h`} />
       </section>
 
-      <section className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <section className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <QuestIdList title="완료 과제" ids={member.completedQuestIds} quests={realQuests} />
         <QuestIdList title="진행중 과제" ids={member.inProgressQuestIds} quests={realQuests} />
-        <QuestIdList title="관심 과제" ids={member.watchlistQuestIds} quests={realQuests} />
       </section>
 
       <section className="mt-8">

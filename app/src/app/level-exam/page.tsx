@@ -7,8 +7,7 @@ import {
   MISSION_TIER_XP,
   EVAL_COMPLETION_BONUS_XP,
   MISSION_XP_CONFIDENCE,
-  LEVEL_XP_THRESHOLD_HEARSAY,
-  LEVEL_THRESHOLD_CONFIDENCE,
+  LEVEL_XP_THRESHOLD,
   OBSERVED_LEVEL_DISTRIBUTION,
   LEVEL_DISTRIBUTION_CONFIDENCE,
 } from "@/domain/leveling";
@@ -132,17 +131,15 @@ export default async function LevelExamPage() {
             </div>
           ))}
         </div>
-        <div className="mt-3 flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
-          <span>레벨 도달 누적 경험치</span>
-          <ConfidenceBadge level={realFields ? "confirmed_api" : LEVEL_THRESHOLD_CONFIDENCE} />
-        </div>
+        <div className="mt-3 text-xs text-neutral-500 dark:text-neutral-400">레벨 도달 누적 경험치</div>
         <p className="mt-1 text-xs text-neutral-400 dark:text-neutral-500">
           {realFields ? (
             <>다음 레벨(Lv.{member.level + 1})까지 {realFields.nextLevelExp.toLocaleString()} — 본인 데이터로 확인됨.</>
           ) : (
             <>
-              Lv.4 {LEVEL_XP_THRESHOLD_HEARSAY[4]} · Lv.5 {LEVEL_XP_THRESHOLD_HEARSAY[5]} — 미션 표 합산(약
-              7,800)과는 차이가 있습니다.
+              Lv.4 {LEVEL_XP_THRESHOLD[4].value} <ConfidenceBadge level={LEVEL_XP_THRESHOLD[4].confidence} /> · Lv.5{" "}
+              {LEVEL_XP_THRESHOLD[5].value} <ConfidenceBadge level={LEVEL_XP_THRESHOLD[5].confidence} /> — 미션 표
+              합산(약 7,800)과는 차이가 있습니다.
             </>
           )}
         </p>

@@ -55,8 +55,7 @@ export async function fetchRealMember(sessionOverride?: string | null): Promise<
 }
 
 // Member 타입에 매핑 가능한 필드만 뽑는다. 완료/진행중 과제 목록은 questStatus에서 온 uqstnNo를
-// "q" + uqstnNo 형식(quests 테이블 id 규칙)으로 변환한다. watchlistQuestIds(관심 과제)는 대응하는
-// API를 찾지 못해 항상 빈 배열이다 — 데모 값을 흉내내지 않고 정직하게 "없음"으로 둔다.
+// "q" + uqstnNo 형식(quests 테이블 id 규칙)으로 변환한다.
 export function mapRealMember(
   snapshot: RealMemberSnapshot
 ):
@@ -68,7 +67,6 @@ export function mapRealMember(
       | "points"
       | "completedQuestIds"
       | "inProgressQuestIds"
-      | "watchlistQuestIds"
       | "level5ExamEligible"
       | "level5ExamConfidence"
     > & { nextLevelExp: number })
@@ -108,7 +106,6 @@ export function mapRealMember(
     nextLevelExp,
     completedQuestIds,
     inProgressQuestIds,
-    watchlistQuestIds: [],
     level5ExamEligible,
     level5ExamConfidence,
   };
