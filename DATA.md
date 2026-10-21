@@ -214,7 +214,7 @@ AI 도구 학습 과제 전체(`uqstnNo`, Quest Tracker `assignments[]`, 2026-08
 | Lv.5 | 8,800 | confirmed_api | 2026-07-30 Lv.4 계정의 `nextLvlRequiredExprc` = 8,800(전언 "약 9,000"을 대체). 이후 실제로 넘겨 2026-08-05 17:21:59 Lv.5 도달(`levelRegDt`) |
 | Lv.6 | 11,000 | confirmed_api | Lv.5 계정의 `nextLvlRequiredExprc`. 2026-08-20 00:51:35 Lv.6 도달 |
 | Lv.7 | 14,000 | confirmed_api | Lv.6 계정의 `nextLvlRequiredExprc` |
-| Lv.8 | 미확인 | — | 2026-10-11 12:54:21 Lv.8 도달(`levelRegDt`, 그때 exp 18,056)했지만 임계값 자체는 Lv.7 계정에서 봤어야 함 |
+| Lv.8 | 18,000 | confirmed_api | Lv.7 계정의 `nextLvlRequiredExprc`(사용자 확인). 2026-10-11 12:54:21 Lv.8 도달(`levelRegDt`) — 그 시각 PASS 1,600 + 평가 종료 5 적립으로 exp가 16,451 → 18,056이 되며 18,000을 넘김 |
 | Lv.9 | 21,000 | confirmed_api | 2026-10-21 Lv.8 계정의 `nextLvlRequiredExprc` |
 
 `nextLvlRequiredExprc`는 "다음 레벨까지 남은 양"이 아니라 **다음 레벨의 누적 임계값**입니다(Lv.4 계정이 exp 6,540일 때
@@ -482,7 +482,7 @@ curl -s -X POST -H "Cookie: $S" -H "X-XSRF-TOKEN: $X" -H "X-Requested-With: XMLH
 
 ## 11. 아직 모르는 것
 
-- Lv.4·Lv.8 임계값, 185018 경험치(규칙상 2,400 예측), 심화 과제 전체의 경험치 규칙
+- Lv.4 임계값, 185018 경험치(규칙상 2,400 예측), 심화 과제 전체의 경험치 규칙
 - Level 5 시험 응시 조건, 시험 합격 기준
 - `instList[0].level`("32", "91")의 의미
 - 네이티브 과정 분포(네이티브 세션 필요), 길드 밖 2기 인원

@@ -27,13 +27,15 @@ export const MISSION_XP_CONFIDENCE: Confidence = "confirmed_api";
 // Lv.5는 2026-07-30 세션(Lv.4 계정 기준 다음 레벨 요구치 8,800)에서 확인, 이후 실제로 8,800을 넘겨
 // 2026-08-05 17:21:59 Lv.5 도달(levelRegDt로 확인). 같은 세션에서 Lv.5 계정 기준 다음 레벨(Lv.6)
 // 요구치 11,000을 동일 API로 확인. 이후 실제로 11,000을 넘겨 2026-08-20 00:51:35 Lv.6 도달, 같은
-// API로 Lv.6 계정 기준 다음 레벨(Lv.7) 요구치 14,000 확인. 2026-10-21 Lv.8 계정에서 Lv.9 요구치 21,000
-// 확인(Lv.8 임계값 자체는 못 봄). Lv.4는 여전히 2차 전언, 미검증.
+// API로 Lv.6 계정 기준 다음 레벨(Lv.7) 요구치 14,000 확인. Lv.7 계정 기준 다음 레벨(Lv.8) 요구치 18,000은
+// 사용자가 같은 API로 확인(2026-10-11 exp 18,056으로 Lv.8 도달과도 맞음). 2026-10-21 Lv.8 계정에서 Lv.9 요구치
+// 21,000 확인. Lv.4는 여전히 2차 전언, 미검증.
 export const LEVEL_XP_THRESHOLD: Record<number, { value: string; confidence: Confidence }> = {
   4: { value: "약 6,000~6,500", confidence: "unknown" },
   5: { value: "8,800", confidence: "confirmed_api" },
   6: { value: "11,000", confidence: "confirmed_api" },
   7: { value: "14,000", confidence: "confirmed_api" },
+  8: { value: "18,000", confidence: "confirmed_api" },
   9: { value: "21,000", confidence: "confirmed_api" },
 };
 
