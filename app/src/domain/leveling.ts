@@ -3,8 +3,8 @@ import type { Confidence } from "./quest";
 // 미션 단계별 지급 경험치. 처음엔 전언 → 사용자 인게임 확인(observed)이었고, 2026-10-21 본인 경험치 내역
 // (POST point/exp/list, exprcTypeNo 52 "평가결과 PASS 시 평가가이드에 명시된 경험치 기준으로 적립")을 평가 기록
 // (ev/request/mbrSearch/searchList.evlEndDt)과 시각으로 맞춰 과제별로 확인했다. 규칙: 공식 학습시간(분) × 15(필수)
-// / × 20(선택) — 확인된 값 전부 일치. 5-2(185013)는 그 대조에서 1,200으로 새로 확인. 4-2만 시각이 안 맞아
-// 사용자 확인값(1,600)이다. 단계 번호 ↔ 과제 대응은 DATA.md 4.1절.
+// / × 20(선택) — 확인된 값 전부 일치. 5-2(185013)는 그 대조에서 1,200으로 새로 확인. 단계 번호 ↔ 과제 대응은
+// DATA.md 4.1절.
 export const MISSION_TIER_XP: Record<string, number | null> = {
   "1-1": 600,
   "1-2": 600,

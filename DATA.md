@@ -21,19 +21,20 @@
 
 | 화면 | 경로 | 보여주는 것 | 원천 | 갱신 | 상태(2026-10-21) |
 |---|---|---|---|---|---|
-| 시장 개요 | `/` | 시간대별 수요·공급 교차 그래프, 요일별 수급, 병목지수 상위 과제, 티커 카드 | DB(`quests`, `eval_aggregate_*`) | 일/주 | **원천이 2026-08-12에 멈춤** (8절) |
-| 과제 시세 | `/quests` | 도구학습 13개 과제의 상태 분포·PASS/FAIL·병목지수·변화율 | DB `quests` | 매일 | 같음 |
+| 시장 개요 | `/` | 시간대별 수요·공급 교차 그래프, 요일별 수급, 병목지수 상위 과제, 티커 카드 | DB(`quests`, `eval_aggregate_*`) | 매일 | 2026-10-21부터 직접 수집(8절) |
+| 과제 시세 | `/quests` | 도구학습 13개 과제의 상태 분포·PASS/FAIL·병목지수·변화율 | DB `quests` | 매일 | 같음(1기+2기 357명 기준) |
 | 과제 상세 | `/quests/[id]` | 과제 하나의 상태 분포 막대·지표 | DB `quests` | 매일 | 같음 |
-| 평가 시장 | `/eval-market` | 시간대×요일 수급 히트맵, 요일별 수급 | DB `eval_aggregate_*` | 매주 | 같음 |
+| 평가 시장 | `/eval-market` | 시간대×요일 수급 히트맵, 요일별 수급 | DB `eval_aggregate_*` | 매일 | 같음(최근 90일) |
 | 내 전략 | `/me` | 남은 과제에 대한 5가지 추천 경로 | DB + 실시간 본인 세션 | 요청마다 | 정상(세션 필요) |
 | 레벨과 시험 | `/level-exam` | 본인 레벨·경험치, 길드 전체 레벨 분포(과정·기수별), 미션별 경험치 | 실시간 세션 + 상수 | 요청마다 | 정상(세션 필요) |
 
 데이터 원천은 세 종류입니다.
 
-1. **공개 트래커 저장소**(`giyeop-cody/*`) — 다른 수강생이 운영하던 수집기의 공개 JSON. 과제 카탈로그와
-   평가 이벤트가 여기서 옵니다.
-2. **코디세이 API 실시간 조회**(`https://api.usr.codyssey.kr/`) — 방문자(또는 서버 env)의 세션으로 매 요청 조회.
-   본인 레벨·과제 상태, 길드 레벨 분포가 여기서 옵니다.
+1. **코디세이 API**(`https://api.usr.codyssey.kr/`) — 두 가지 방식으로 씁니다. (a) 매일 수집기
+   (`scripts/collect-live.mjs`)가 길드 전원의 과제 상태와 평가 세션을 모아 DB에 집계를 씁니다. (b) 방문자(또는 서버
+   env)의 세션으로 매 요청 본인 레벨·과제 상태와 길드 레벨 분포를 조회합니다.
+2. **공개 트래커 저장소**(`giyeop-cody/*`) — 다른 수강생이 운영하던 수집기의 공개 JSON. 2026-08-12에 멈췄고, 지금은
+   과제 이름·공식 학습시간(seed)과 1기 명단에만 남아 있습니다.
 3. **사용자 인게임 관측** — API로 찾지 못한 값(미션별 경험치 등). 출처와 확인 경로를 4절에 기록합니다.
 
 ---
@@ -109,11 +110,12 @@ node -e 'const s=require("fs").readFileSync("main.js","utf8");
 | `GET guild/ranking/weeklyList` | `guildSeasonId`, `weekNo` | `/level-exam` | `rankings[].guildId` |
 | `GET guild/{guildId}/detail` | `guildSeasonId`, `weekNo` | `/level-exam` | `members[].mbrId`(기수 판정용), `members[].level` |
 
-### 3.3 분석에 쓴 엔드포인트 (앱에는 없음)
+### 3.3 수집기·분석에 쓴 엔드포인트 (화면에서 직접 호출하지는 않음)
 
 | 엔드포인트 | 파라미터 | 얻은 것 |
 |---|---|---|
-| `POST ev/request/mbrSearch/searchList` | `mbrId`, `instCd`, `page=1`, `pagePerRows=200`, `orderBy=DESC` | 한 회원의 평가 기록 전체: `projectNo`, `projectNm`, `lcorsNo`, `lcorsNm`, `uqstnNo`, `uqstnNm`, `evlStusCd`/`evlStusNm`, `passedYn`, `evlScr`, `evlBgngDt`, `evlEndDt`, `total`. 357명 조회 시 잘린 응답(`total` > 행 수) 0건 |
+| `POST ev/request/mbrSearch/searchList` | `mbrId`, `instCd`, `page=1`, `pagePerRows=200`, `orderBy=DESC` | 한 회원의 평가 기록 전체: `projectNo`, `projectNm`, `lcorsNo`, `lcorsNm`, `uqstnNo`, `uqstnNm`, `evlStusCd`/`evlStusNm`, `passedYn`, `evlScr`, `evlBgngDt`, `evlEndDt`, `total`. 357명 조회 시 잘린 응답(`total` > 행 수) 0건. **수집기가 사용** |
+| `POST ev/request/mtlEvlTxnDtoByPkList` | `evlNo`, `evlDegr` | 평가 한 건(과제 1회 평가)을 이루는 동료 평가 세션 행들: `mtlEvlSn`(세션 ID), `regDt`(요청·예약 시각), `mtlEvlPamBgngDt`(예약 슬롯 시각, 보통 정시·30분), `mtlEvlBgngDt`/`mtlEvlEndDt`(실제 시작·종료), `mtlEvlStusCd`/`mtlEvlStusNm`. 평가자 실명·mbrId·점수·피드백도 들어 있어 수집기는 시각·상태만 읽고 버립니다. 아직 끝나지 않은 평가(대기중/진행중)는 **끝난 세션만** 나옵니다(2026-10-21, 열린 평가 28건 확인). **수집기가 사용** |
 | `POST point/exp/list` | JSON 본문 `{page, pagePerRows, mbrId, instCd}` (`Content-Type: application/json`) | **본인 경험치 적립 내역 전체**: `regDt`, `exprcScr`(점수), `exprcTypeNo`(종류), `exprcDtlDesc`(설명). 2026-10-21 본인 70건, 합계 18,056 = 현재 `exp`와 정확히 일치. 5.3·5.4절 미션별 XP 확정에 사용. 평가요청취소 행의 설명에는 상대 실명이 들어 있어 설명 원문은 쓰지 않습니다 |
 | `GET point/exp/total/detail` | — | `point/pnt/total/detail`과 같은 `level`/`exp`/`nextLvlRequiredExprc`/`levelRegDt` |
 | `GET rest/secom/detail` | `mbrId`, `year`, `month` | 출입(SECOM) 기록 — Jail Tracker·Time Manager가 사용. 7월 장학금 자격 계산(7.2절)의 원천 |
@@ -134,7 +136,6 @@ node -e 'const s=require("fs").readFileSync("main.js","utf8");
 | `guild/{id}/detail.members[].classNm` | 357명 전원 `null` — 기수 정보 없음 |
 | `instCd` 파라미터(길드 API) | `00019`~`00023` 어느 값을 넣어도 응답 동일 → 무시됨. 길드 API는 **세션 계정의 기관** 길드만 반환 |
 | `POST user/getStudyUsers/` | `search`(2자 이상) 이름 검색, 최대 10건, 페이지네이션 없음. 길드 밖 인원을 찾으려고 이름으로 검색하는 것은 개인정보 처리 문제로 하지 않았습니다 |
-| `ev/request/mtlEvlTxnDtoByPkList` | 평가자/점수 상세 — EV Tracker가 사용, 실명 쌍 포함 |
 | `schedule/scheduleAllList` | 평가 슬롯 — 세션 소유자 본인 데이터만 반환해서 "열린 평가 슬롯" 수집에 쓸 수 없음(EV Tracker에서 폐기) |
 | `point/pnt/list` | 포인트 내역(`crtrTypeCd` 필터). 2026-07-30엔 `point/exp/list`도 "미션 단위 값 없음"으로 넘겼지만, 2026-10-21 평가 기록과 시각을 맞추면 과제별로 대응된다는 걸 확인(5.4절) |
 | `POST user/inst/update`, 각종 `…/save`, `…/update` | 쓰기 API — 호출하지 않습니다 |
@@ -190,7 +191,9 @@ AI 도구 학습 과제 전체(`uqstnNo`, Quest Tracker `assignments[]`, 2026-08
 | `status/list.requireYn` | `"Y"`/`"N"` | 필수/선택 | 응답 |
 | `searchList.evlStusCd` / `evlStusNm` | `00003` "완료", "대기중" 등 | 평가 상태 | 응답 |
 | `searchList.passedYn` | `"Y"`/`"N"` | 그 평가 통과 여부 | 본인 계정에서 화면 "완료"와 일치 |
-| `searchList.evlBgngDt` | `"2026-10-10 21:30:41"` | 평가 시작 시각(KST) | 응답 |
+| `searchList.evlBgngDt` / `evlEndDt` | `"2026-10-10 21:30:41"` | 그 과제 평가의 시작·최종 종료 시각(KST). 대기중이면 둘 다 null. `evlEndDt`는 PASS 경험치 적립 시각과 1초 이내로 같음 | 응답, `point/exp/list` 대조 |
+| `searchList.evlDegr` | `1`, `2` | 평가 차수(재평가면 2) | 응답 |
+| `mtlEvlTxnDtoByPkList.mtlEvlStusNm` | `00006` "평가완료", "평가요청취소", "평가거절" | 세션 상태. 이름에 "완료" → COMPLETED, "취소"/"거절" → CANCELLED(EV Tracker와 같은 분류) | 응답 |
 | Quest Tracker `aggregates[].N/M/E/C` | 미시작/미진행/평가중/완료 | N은 API 값이 아니라 **기록 부재에서 추론** | Quest Tracker `statusLabel` |
 | EV Tracker `events[].status` | `COMPLETED`/`CANCELLED`/`REQUESTED`/`IN_PROGRESS` | 평가 이벤트 상태(한글 상태명을 정규화한 값) | EV Tracker |
 
@@ -232,7 +235,7 @@ AI 도구 학습 과제 전체(`uqstnNo`, Quest Tracker `assignments[]`, 2026-08
 
 ### 5.4 미션별 지급 경험치
 
-PASS 적립(type 52) 행의 `regDt`가 평가 기록의 `evlEndDt`와 같은 초까지 일치해서, 적립 한 건이 어느 과제인지 정확히 맞출 수 있었습니다.
+PASS 적립(type 52) 행의 `regDt`가 평가 기록의 `evlEndDt`와 같은 초(한 건은 1초 차이)로 일치해서, 적립 한 건이 어느 과제인지 정확히 맞출 수 있었습니다.
 
 | 단계 | uqstnNo | XP | 신뢰도 | 이력 |
 |---|---|---|---|---|
@@ -240,7 +243,7 @@ PASS 적립(type 52) 행의 `regDt`가 평가 기록의 `evlEndDt`와 같은 초
 | 2-1 / 2-2 | 185006 / 185007 | 900 / 300 | confirmed_api | 같음 |
 | 3-1 / 3-2 | 185008 / 185009 | 1,200 / 1,200 | confirmed_api | 같음 |
 | 4-1 | 185010 | 1,200 | confirmed_api | 전언 1,600 → 사용자 확인으로 1,200 정정(07-27) → 내역 대조 |
-| 4-2 | 185011 | 1,600 | observed | 전언 1,200 → 사용자 확인으로 1,600 정정(08-05). 4-1과 값이 뒤바뀌어 전해졌던 것. 내역에 2026-08-05 17:21:59 1,600 적립이 있지만 그 시각의 평가 기록이 없어 과제와 직접 맞추지는 못함 |
+| 4-2 | 185011 | 1,600 | confirmed_api | 전언 1,200 → 사용자 확인으로 1,600 정정(08-05). 4-1과 값이 뒤바뀌어 전해졌던 것. 내역의 2026-08-05 17:21:59 1,600 적립이 185011 `evlEndDt` 17:21:58과 1초 차이로 대응 |
 | 5-1 | 185012 | 600 | confirmed_api | 전언 → 사용자 확인 → 내역 대조 |
 | 5-2 | 185013 | **1,200** | confirmed_api | 08-02 화면·API에서 못 찾음 → 10-21 내역 대조로 확정 |
 | 5-3 | 185014 | 1,200 | confirmed_api | 사용자 확인(08-19) → 내역 대조 |
@@ -372,18 +375,34 @@ API에 기수 필드가 없어 외부 스냅샷으로 판정합니다. 아카이
 | `codyssey_commons` | 로스터 | 앱은 사용 안 함 | 2026-08-03 |
 | `Codyssey-time-manager` | — | 인정시간 계산 원칙(일 12시간 상한)만 참고 | 2026-08-18 |
 
-**중요:** 트래커들이 2026-08-12에 멈췄으므로 **과제 시세·평가 시장·시장 개요는 8/12 데이터에 고정**되어 있습니다. 매일 돌아가는
-`refresh-quests`는 같은 스냅샷을 다시 넣고 있고(`data_generated_at` 2026-08-12), 그래서 7일 변화율은 0%가 됩니다. 주간 `refresh-eval`은
-최근 3개월 파일 중 `2026-08.json`만 받습니다(8/12까지). 2기(9월 시작)는 이 화면들에 전혀 반영되지 않습니다. 이 화면들을 살리려면
-3.3절의 `searchList`로 직접 수집하는 수집기가 필요합니다.
+트래커들이 2026-08-12에 멈춰서 2026-10-21까지 **과제 시세·평가 시장·시장 개요는 8/12 데이터에 고정**되어 있었습니다.
+예전 `refresh-quests`(매일)는 같은 스냅샷을 다시 넣어 7일 변화율이 0%였고, `refresh-eval`(매주)은 `2026-08.json`만 받았습니다.
+DB 이력을 보면 이 GitHub Actions 잡들도 2026-09-28 이후 돌지 않았습니다(저장소에 60일 활동이 없으면 GitHub가 예약 워크플로를
+멈춥니다). 2026-10-21에 두 스크립트를 지우고 직접 수집기(8.2절)로 바꿨습니다.
 
 ### 8.2 갱신 스크립트와 DB
 
 | 명령 | 주기(Actions) | 하는 일 |
 |---|---|---|
 | `npm run db:seed` | 수동 | `db/schema.sql` 적용 + `db/seed/*.json`(2026-07-26 스냅샷) 적재 |
-| `npm run refresh:quests` | 매일 04:00 KST | Quest Tracker `current.json` → `quests` upsert, `quest_completed_history`에 완료 수 적재(35일 보관), 7일 전 대비 변화율 계산 |
-| `npm run refresh:eval` | 매주 월요일 | EV Tracker 최근 3개월 → `eval_aggregate_meta`/`eval_aggregate_cells` 재작성, 트랙 평균 처리시간 → `quests.avg_wait_hours` |
+| `npm run collect` | 매일 04:00 KST(`.github/workflows/collect.yml`) | 코디세이 API 직접 수집 → `quests` 상태 분포·PASS/FAIL·변화율·트랙 평균 처리시간, `eval_aggregate_*` 재작성. `-- --dry-run`이면 출력만 |
+
+수집기(`scripts/collect-live.mjs`) 순서와 정의:
+
+1. `currentSeasonDetail` → `weeklyList` → 길드마다 `guild/{id}/detail`에서 `mbrId`만 → 2026-10-21 357명(1기+2기).
+2. 회원마다 `searchList`(120ms 간격). 과제마다 **가장 최신 행**으로 상태를 정합니다: 행 없음 N(미시작), `00001` M(미진행),
+   `00002` E(평가중), `00003` C(완료), 완료 중 `passedYn` Y/N으로 PASS/FAIL. 예전 Quest Tracker 정의와 같지만, 예전 코드는 DESC
+   목록에서 마지막(=가장 오래된) 행이 이기는 버그가 있었습니다.
+3. `evlEndDt`가 최근 90일 안이거나 아직 없는 평가마다 `mtlEvlTxnDtoByPkList`(2026-10-21 1,162건) → `regDt`가 90일 안인 세션만
+   남깁니다(2,379건: 완료 2,372, 취소 6). 같은 세션은 `mtlEvlSn`으로 중복 제거합니다.
+4. 수요 = 완료·취소 세션의 `regDt`(요청 시각) 분포, 공급 = 완료 세션의 `mtlEvlBgngDt`(없으면 예약 슬롯) 분포, 트랙 평균 처리시간 =
+   완료 세션의 (실제 시작 − 요청) 평균(`lcorsNm` 기준). 예전 EV Tracker와 같은 정의입니다.
+5. 열린 요청 수(요청 대기)·진행 수는 상세에 안 나오므로 2)의 M·E 합계로 씁니다(2026-10-21: 168 / 118).
+6. 한 트랜잭션으로 DB에 씁니다. 실패하면 DB는 이전 상태 그대로입니다. 전체 약 4분.
+
+전환 시 정리: 예전 1기 150명 기준 완료 수와 비교하면 변화율이 왜곡되므로 2026-10-21에 `quest_completed_history`를 비웠습니다
+(그전 행 525개, 2026-08-25~09-28). 그래서 7일간 변화율은 0%입니다. 취소가 2,379건 중 6건으로 적게 잡히는 것은 취소된 세션이 상세
+목록에서 대부분 빠지기 때문으로 보입니다(관측).
 
 | 테이블 | 내용 |
 |---|---|
@@ -399,11 +418,11 @@ API에 기수 필드가 없어 외부 스냅샷으로 판정합니다. 아카이
 
 | 지표 | 정의 | 신뢰도 |
 |---|---|---|
-| 상태 분포 | Quest Tracker N/M/E/C(미시작/미진행/평가중/완료). N은 기록 부재 추론 | confirmed_api(N 제외) |
+| 상태 분포 | 수집기 N/M/E/C(미시작/미진행/평가중/완료). N은 기록 부재 추론. 화면 라벨은 미진행/진행중/평가 대기/완료 순서로 N/M/E/C에 대응 | confirmed_api(N 제외) |
 | 통과율·재평가율 | pass/(pass+fail), fail/(pass+fail). 표본 0이면 null | confirmed_api |
 | 공식 학습시간 | `learningTm`(분) ÷ 60 | confirmed_api |
 | 최근 변화율 | 오늘 완료 수 vs 7일 전 완료 수(`quest_completed_history`) | observed |
-| 트랙 평균 처리시간 | 같은 트랙의 완료 이벤트 `slotDateTime − requestedAt` 평균. 과제가 아니라 **트랙 단위** | observed |
+| 트랙 평균 처리시간 | 같은 트랙의 완료 세션 (실제 시작 − 요청) 평균. 과제가 아니라 **트랙 단위**. 2026-10-21 도구학습 트랙 5.4~9.9h, 텀프로젝트 91h | observed |
 | 수요(평가 시장) | 완료·취소된 요청의 **요청 시각** 분포(열린 요청 제외) | observed |
 | 공급(평가 시장) | 완료 이벤트의 **실제 처리 시각** 분포. 열린 슬롯 API가 없어 처리량으로 근사 | inferred |
 | 병목지수(0~100) | 처리시간(24h에서 포화) 30 + 재평가율 25 + 정체 비율(진행중+평가대기 / 전체) 35 + 표본<10 페널티 10. 처리시간 없으면 15점 | observed / 표본<10이면 inferred |
@@ -419,6 +438,7 @@ API에 기수 필드가 없어 외부 스냅샷으로 판정합니다. 아카이
 
 - 길드 상세의 실명·이메일·프로필 이미지는 읽지 않고 `mbrId`/`level`만 씁니다. `mbrId`도 기수 판정 후 버립니다.
 - 평가 이벤트의 평가자·피평가자 실명은 집계 단계에서 버리고 수치만 DB에 넣습니다.
+- 매일 수집기는 길드 상세·평가 상세 응답의 실명·mbrId·점수·피드백을 읽지 않고, 회원별 행 없이 과제·시간대 단위 집계만 DB에 씁니다.
 - 개인별 분석(7절)은 메모리에서 집계만 하고 개인별 행을 출력하거나 저장하지 않았습니다.
 - 2026-10-21 시도했다가 하지 않은 것: 이름으로 사용자 검색(길드 밖 인원 찾기), 1기 명단 해시를 저장소에 복사(해시가 8자리라 쉽게
   역산됨 — 대신 런타임 조회).

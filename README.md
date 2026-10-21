@@ -7,8 +7,8 @@
 
 **과제 카탈로그(13개, AI/SW 기초), 상태 분포, PASS/FAIL, 최근 변화, 평가 시장 히트맵은 전부 실제 공개 데이터로 동작합니다.**
 
-- 시장 개요 / 과제 시세 / 과제 상세: `codyssey_Quest_Tracker` 공개 저장소 실제 스냅샷(상태 분포·PASS/FAIL·공식 학습시간) + `codyssey_EV_Tracker` 공개 저장소 실제 이벤트(트랙별 평균 처리시간) 조인
-- 평가 시장: `codyssey_EV_Tracker` 최근 3개월치 실제 이벤트를 시간대×요일로 집계(PII 제거)
+- 시장 개요 / 과제 시세 / 과제 상세: 코디세이 API에서 직접 수집한 시즌 길드 전원의 과제 상태 분포·PASS/FAIL·트랙별 평균 처리시간(과제 이름·공식 학습시간은 `codyssey_Quest_Tracker` 스냅샷)
+- 평가 시장: 같은 수집에서 최근 90일 평가 세션의 요청·처리 시각을 시간대×요일로 집계(PII 제거)
 - 내 전략 / 레벨과 시험: 과제 카탈로그는 실제 데이터, 본인 세션을 연결하면 레벨·경험치·포인트·닉네임·완료
   및 진행중 과제 목록·레벨 분포까지 실제 데이터로 나옵니다. 세션이 없으면 **데모 페르소나**로 폴백합니다.
 
@@ -45,17 +45,16 @@ docker는 개발/CI 검증용이지 배포 서버가 상시 붙잡고 있을 대
 
 ## 데이터 자동 갱신
 
-과제 카탈로그와 평가 시장은 원본 소스가 바뀌는 속도가 달라 갱신 주기도 다릅니다.
+`scripts/collect-live.mjs`(`npm run collect`)가 코디세이 API에서 직접 수집해 과제 시세와 평가 시장을 한 번에
+갱신합니다. 원래 원천이던 공개 트래커(`codyssey_Quest_Tracker`, `codyssey_EV_Tracker`)가 2026-08-12에 멈춰서 같은
+정의로 다시 만든 것입니다 — 정의와 근거는 [DATA.md](DATA.md) 8절.
 
-- `scripts/refresh-quests.mjs` — **매일** `codyssey_Quest_Tracker`의 `docs/data/current.json`을 다시 받아
-  상태 분포·PASS/FAIL·최근 변화율을 갱신합니다. 최근 변화율은 `quest_completed_history`에 매일 쌓은 완료건수를
-  7일 전 값과 비교하는 롤링 윈도입니다 — 도입 직후 7일간은 비교 대상이 없어 0%로 보이다가 이후 실제 값으로 채워집니다.
-- `scripts/refresh-eval-aggregate.mjs` — **매주(월요일)** `codyssey_EV_Tracker`의 최근 3개월치 월별 파일을
-  다시 받아 시간대×요일 수급 히트맵과 과제별 트랙 평균 처리시간(`avg_wait_hours`)을 갱신합니다. 3개월 누적
-  집계라 매일 다시 계산할 이유가 없습니다.
-- `.github/workflows/refresh-quests.yml`(매일), `refresh-eval-aggregate.yml`(매주 월요일)이 각각 실행합니다.
-  둘 다 저장소 시크릿 `DATABASE_URL`이 필요하고, `workflow_dispatch`로 수동 실행도 가능합니다.
-- 로컬에서 즉시 최신화하려면 `npm run refresh:quests` / `npm run refresh:eval`을 실행하면 됩니다.
+- 시즌 길드 전원(2026-10-21 기준 357명)의 평가 목록 + 최근 90일 평가 상세를 읽고 집계만 DB에 씁니다. 약 4분 걸립니다.
+- `npm run collect -- --dry-run`이면 DB에 쓰지 않고 집계만 출력합니다.
+- `.github/workflows/collect.yml`이 매일 04:00 KST에 실행합니다. 저장소 시크릿 `DATABASE_URL`과 `CODYSSEY_SESSION`
+  (로그인 쿠키 문자열)이 필요합니다. 세션이 만료되면 잡은 실패하고 DB는 마지막 수집 상태로 남습니다.
+- 최근 변화율은 `quest_completed_history`에 매일 쌓은 완료 수를 7일 전 값과 비교합니다 — 수집 전환(2026-10-21) 직후
+  7일간은 0%로 보입니다.
 
 ## 구조
 
@@ -67,8 +66,7 @@ app/                       Next.js + TypeScript 앱
   src/app/                  라우트 (시장개요 /, 과제시세 /quests, 평가시장 /eval-market, 내전략 /me, 레벨과시험 /level-exam)
   src/components/           신뢰도 배지, 증감 표시, 세션 입력 팝업 등 공용 UI
   scripts/seed-db.mjs        db/schema.sql 적용 + db/seed/*.json(초기 스냅샷)을 Postgres에 적재
-  scripts/refresh-quests.mjs         매일 — 과제 카탈로그/상태 분포 재수집
-  scripts/refresh-eval-aggregate.mjs 매주 — 평가 시장 집계/트랙 평균처리시간 재수집
+  scripts/collect-live.mjs   매일 — 코디세이 API 직접 수집(과제 상태 분포 + 평가 시장)
 db/schema.sql              quests / eval_aggregate_meta / eval_aggregate_cells / quest_completed_history 테이블 정의
 db/seed/                    커밋된 실제 데이터 스냅샷(JSON) — seed-db.mjs의 입력
 docker-compose.yml          로컬 개발용 Postgres

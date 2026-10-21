@@ -8,8 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "db:seed": "node scripts/seed-db.mjs",
-    "refresh:quests": "node scripts/refresh-quests.mjs",
-    "refresh:eval": "node scripts/refresh-eval-aggregate.mjs"
+    "collect": "node scripts/collect-live.mjs"
   },
   "dependencies": {
     "next": "^16.2.12",
