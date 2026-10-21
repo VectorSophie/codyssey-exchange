@@ -10,6 +10,7 @@
 //   달랐다(실제 Lv.4 계정에 level: "32") — 다른 의미의 카운터로 추정되며 사용하지 않는다.
 // - learning/learningProgress/status/list.result.uqstns[]: uqstnResultYn이 "PASS"면 완료, "평가전"이면
 //   제출 후 평가 대기(진행중으로 취급), null이면 미시작.
+import { createHash } from "crypto";
 import type { Member } from "@/domain/member";
 import type { Confidence } from "@/domain/quest";
 
@@ -112,7 +113,7 @@ export function mapRealMember(
 }
 
 export type Course = "올인원" | "네이티브" | "기타";
-export type Cohort = "1기" | "2기";
+export type Cohort = "1기" | "2기" | null; // null: 1기 명단을 받지 못해 판정 불가
 
 export interface LevelDistributionEntry {
   course: Course;
@@ -131,11 +132,27 @@ function courseOf(instNm: unknown): Course {
   return "기타";
 }
 
-// ponytail: 기수 API가 없어(길드 members[].classNm 전원 null, 2026-10-21) mbrId 대역으로 가른다 — 올인원
-// 길드 357명 중 1000327049와 1000350034 사이가 비어 있었고 그 아래가 1기(Lv.6+ 전원 포함)다. 기수
-// 필드를 주는 API를 찾으면 그걸로 바꾼다. 늦게 가입한 1기나 일찍 가입한 2기는 잘못 분류될 수 있다.
-const COHORT2_MIN_MBR_ID = 1000330000;
-export const cohortOf = (mbrId: unknown): Cohort => (Number(mbrId) < COHORT2_MIN_MBR_ID ? "1기" : "2기");
+// 기수 API가 없어(길드 members[].classNm 전원 null) 외부 스냅샷으로 가른다: 1기 = 아카이브된
+// codyssey_Quest_Tracker의 마지막 명단(2026-08-12, 150명 — 당시 길드 총원 = 1기 전원)에 있는 사람.
+// 2026-10-21 검증: 명단 밖 215명은 8/13 이전 평가 기록이 0건(첫 평가 2026-09~), 명단 안 142명 중 113명은
+// 8/13 이전 기록 있음. mbrId 대역 구분은 2기 지원자의 선행 가입 계정이 1기 대역에 섞여 틀렸다(29명).
+// 명단은 저장소에 복사하지 않고 매번 공개 URL에서 받아 메모리에서만 대조한다. 1기는 새로 늘지 않으니
+// 프로세스당 한 번만 받는다. 받지 못하면 null — 기수 구분 없이 합계만 보인다.
+const COHORT1_ROSTER_URL =
+  "https://raw.githubusercontent.com/giyeop-cody/codyssey_Quest_Tracker/main/docs/data/current.json";
+let cohort1Roster: Promise<Set<string> | null> | null = null;
+function loadCohort1Roster(): Promise<Set<string> | null> {
+  cohort1Roster ??= fetch(COHORT1_ROSTER_URL, { cache: "no-store", signal: AbortSignal.timeout(15000) })
+    .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+    .then((d: { members?: { mbrId?: unknown }[] }) => new Set((d.members ?? []).map((m) => String(m.mbrId))))
+    .catch((e) => {
+      console.error("1기 명단 조회 실패, 기수 구분 생략:", (e as Error).message);
+      cohort1Roster = null; // 다음 요청에서 다시 시도
+      return null;
+    });
+  return cohort1Roster;
+}
+const rosterKey = (mbrId: unknown) => "sha1:" + createHash("sha1").update(String(mbrId)).digest("hex").slice(0, 8);
 
 // 길드 랭킹 상세 화면에서 실사용자가 직접 확인하던 레벨 분포를, 같은 화면이 쓰는 API로 대체한다.
 // 시즌의 전체 길드를 순회해 members[].level(+기수 판정용 mbrId)만 집계하고 즉시 버린다 — 실명/이메일 등 개인정보는
@@ -167,6 +184,7 @@ export async function fetchRealLevelDistribution(
     ).result;
     const guildIds = weekly.rankings.map((r) => r.guildId);
 
+    const roster = await loadCohort1Roster();
     const counts = new Map<string, LevelDistributionEntry>();
     for (const guildId of guildIds) {
       const detail = (
@@ -179,7 +197,7 @@ export async function fetchRealLevelDistribution(
       for (const m of detail.members) {
         const level = Number(m.level);
         if (Number.isNaN(level)) continue;
-        const cohort = cohortOf(m.mbrId);
+        const cohort: Cohort = roster ? (roster.has(rosterKey(m.mbrId)) ? "1기" : "2기") : null;
         const key = `${cohort}|${level}`;
         const e = counts.get(key) ?? { course, cohort, level, count: 0 };
         e.count++;
@@ -187,7 +205,7 @@ export async function fetchRealLevelDistribution(
       }
     }
 
-    return [...counts.values()].sort((a, b) => a.level - b.level || a.cohort.localeCompare(b.cohort));
+    return [...counts.values()].sort((a, b) => a.level - b.level || String(a.cohort).localeCompare(String(b.cohort)));
   } catch (e) {
     console.error("실제 레벨 분포 조회 실패, 관측 스냅샷으로 폴백:", (e as Error).message);
     return null;
