@@ -51,10 +51,11 @@ docker는 개발/CI 검증용이지 배포 서버가 상시 붙잡고 있을 대
 
 - 시즌 길드 전원(2026-10-21 기준 357명)의 평가 목록 + 최근 90일 평가 상세를 읽고 집계만 DB에 씁니다. 약 4분 걸립니다.
 - `npm run collect -- --dry-run`이면 DB에 쓰지 않고 집계만 출력합니다.
-- `.github/workflows/collect.yml`이 매일 04:00 KST에 실행합니다. 저장소 시크릿 `DATABASE_URL`과 `CODYSSEY_SESSION`
-  (로그인 쿠키 문자열)이 필요합니다. 세션이 만료되면 잡은 실패하고 DB는 마지막 수집 상태로 남습니다.
-- 최근 변화율은 `quest_completed_history`에 매일 쌓은 완료 수를 7일 전 값과 비교합니다 — 수집 전환(2026-10-21) 직후
-  7일간은 0%로 보입니다.
+- **수동 실행입니다.** 코디세이 세션이 자동으로 로그아웃되어 오래 살아 있지 않기 때문에 예약 실행(GitHub Actions)은 두지
+  않았습니다. 갱신하고 싶을 때 `app/.env.local`의 `CODYSSEY_SESSION`에 새 쿠키를 넣고 실행합니다. 실행하지 않으면 화면은
+  마지막 수집 상태로 남습니다.
+- 최근 변화율은 `quest_completed_history`에 수집할 때마다 쌓은 완료 수를 7일 이상 전의 가장 가까운 값과 비교합니다 — 수집
+  전환(2026-10-21) 후 첫 7일간은 비교 대상이 없어 0%로 보입니다.
 
 ## 구조
 
@@ -66,7 +67,7 @@ app/                       Next.js + TypeScript 앱
   src/app/                  라우트 (시장개요 /, 과제시세 /quests, 평가시장 /eval-market, 내전략 /me, 레벨과시험 /level-exam)
   src/components/           신뢰도 배지, 증감 표시, 세션 입력 팝업 등 공용 UI
   scripts/seed-db.mjs        db/schema.sql 적용 + db/seed/*.json(초기 스냅샷)을 Postgres에 적재
-  scripts/collect-live.mjs   매일 — 코디세이 API 직접 수집(과제 상태 분포 + 평가 시장)
+  scripts/collect-live.mjs   수동 — 코디세이 API 직접 수집(과제 상태 분포 + 평가 시장)
 db/schema.sql              quests / eval_aggregate_meta / eval_aggregate_cells / quest_completed_history 테이블 정의
 db/seed/                    커밋된 실제 데이터 스냅샷(JSON) — seed-db.mjs의 입력
 docker-compose.yml          로컬 개발용 Postgres
