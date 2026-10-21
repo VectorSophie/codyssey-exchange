@@ -33,7 +33,18 @@ export default async function LevelExamPage() {
   const nodes = realQuests.map((q) => ({ quest: q, status: questStatus(q, member) }));
 
   const realDistribution = await fetchRealLevelDistribution(visitorSession);
-  const levelDistribution = realDistribution ?? OBSERVED_LEVEL_DISTRIBUTION;
+  // 막대는 레벨별 합계, 옆에 기수별 내역을 붙인다(관측 스냅샷 폴백은 기수 구분이 없다).
+  const byLevel = new Map<number, { level: number; count: number; cohorts: Record<string, number> }>();
+  for (const d of (realDistribution ?? OBSERVED_LEVEL_DISTRIBUTION) as { level: number; count: number; cohort?: string }[]) {
+    const e = byLevel.get(d.level) ?? { level: d.level, count: 0, cohorts: {} };
+    e.count += d.count;
+    if (d.cohort) e.cohorts[d.cohort] = (e.cohorts[d.cohort] ?? 0) + d.count;
+    byLevel.set(d.level, e);
+  }
+  const levelDistribution = [...byLevel.values()].sort((a, b) => a.level - b.level);
+  const cohortTotals: Record<string, number> = {};
+  for (const d of realDistribution ?? []) cohortTotals[d.cohort] = (cohortTotals[d.cohort] ?? 0) + d.count;
+  const distributionCourse = realDistribution?.[0]?.course;
   const levelDistributionConfidence = realDistribution ? "confirmed_api" : LEVEL_DISTRIBUTION_CONFIDENCE;
   const maxDistCount = Math.max(...levelDistribution.map((d) => d.count));
 
@@ -90,7 +101,10 @@ export default async function LevelExamPage() {
         </div>
         <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
           {realDistribution
-            ? "이번 시즌 전체 길드 실시간 집계 — 상위 레벨로 갈수록 급격히 줄어드는 피라미드 구조"
+            ? `이번 시즌 ${distributionCourse} 전체 길드 실시간 집계(${Object.entries(cohortTotals)
+                .sort()
+                .map(([c, n]) => `${c} ${n}명`)
+                .join(" · ")}) — 기수는 회원번호 대역으로 추정, 다른 과정은 그 과정 세션이 필요합니다`
             : "특정 길드 기준(관측 스냅샷) — 상위 레벨로 갈수록 급격히 줄어드는 피라미드 구조"}
         </p>
         <div className="mt-3 space-y-2 rounded-sm border border-border bg-surface p-4 shadow-sm">
@@ -104,6 +118,11 @@ export default async function LevelExamPage() {
                 />
               </div>
               <span className="w-8 text-right tabular-nums text-neutral-500 dark:text-neutral-400">{d.count}</span>
+              {realDistribution && (
+                <span className="w-28 text-right text-xs tabular-nums text-neutral-400 dark:text-neutral-500">
+                  1기 {d.cohorts["1기"] ?? 0} · 2기 {d.cohorts["2기"] ?? 0}
+                </span>
+              )}
             </div>
           ))}
         </div>

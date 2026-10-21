@@ -111,13 +111,34 @@ export function mapRealMember(
   };
 }
 
+export type Course = "올인원" | "네이티브" | "기타";
+export type Cohort = "1기" | "2기";
+
 export interface LevelDistributionEntry {
+  course: Course;
+  cohort: Cohort;
   level: number;
   count: number;
 }
 
+// 과정은 세션 계정의 instList[0].instNm으로 판정한다 — 길드 API는 세션 기관(instCd) 소속 길드만 돌려주고
+// instCd 파라미터는 무시한다(2026-10-21 확인). 그래서 한 세션으로는 한 과정만 집계되고, 다른 과정 분포는
+// 그 과정 계정의 세션이 있어야 한다.
+function courseOf(instNm: unknown): Course {
+  const s = String(instNm ?? "");
+  if (s.includes("올인원")) return "올인원";
+  if (s.includes("네이티브")) return "네이티브";
+  return "기타";
+}
+
+// ponytail: 기수 API가 없어(길드 members[].classNm 전원 null, 2026-10-21) mbrId 대역으로 가른다 — 올인원
+// 길드 357명 중 1000327049와 1000350034 사이가 비어 있었고 그 아래가 1기(Lv.6+ 전원 포함)다. 기수
+// 필드를 주는 API를 찾으면 그걸로 바꾼다. 늦게 가입한 1기나 일찍 가입한 2기는 잘못 분류될 수 있다.
+const COHORT2_MIN_MBR_ID = 1000330000;
+export const cohortOf = (mbrId: unknown): Cohort => (Number(mbrId) < COHORT2_MIN_MBR_ID ? "1기" : "2기");
+
 // 길드 랭킹 상세 화면에서 실사용자가 직접 확인하던 레벨 분포를, 같은 화면이 쓰는 API로 대체한다.
-// 시즌의 전체 길드를 순회해 members[].level만 집계하고 즉시 버린다 — 실명/이메일 등 개인정보는
+// 시즌의 전체 길드를 순회해 members[].level(+기수 판정용 mbrId)만 집계하고 즉시 버린다 — 실명/이메일 등 개인정보는
 // 이 함수 밖으로 절대 나가지 않는다(docs/privacy-threat-model.md). 세션이 없거나 실패하면 null —
 // 호출부는 기존 관측 스냅샷(OBSERVED_LEVEL_DISTRIBUTION)으로 폴백한다.
 export async function fetchRealLevelDistribution(
@@ -127,6 +148,10 @@ export async function fetchRealLevelDistribution(
   if (!session) return null;
 
   try {
+    const profile = (await fetchJson("rest/user/info/detail", "GET", session)) as {
+      result?: { instList?: { instNm?: unknown }[] };
+    };
+    const course = courseOf(profile.result?.instList?.[0]?.instNm);
     const season = (
       (await fetchJson("guild/season/currentSeasonDetail", "GET", session)) as {
         result: { guildSeasonId: number; currentWeekNo: number };
@@ -142,23 +167,27 @@ export async function fetchRealLevelDistribution(
     ).result;
     const guildIds = weekly.rankings.map((r) => r.guildId);
 
-    const counts = new Map<number, number>();
+    const counts = new Map<string, LevelDistributionEntry>();
     for (const guildId of guildIds) {
       const detail = (
         (await fetchJson(
           `guild/${guildId}/detail?guildSeasonId=${season.guildSeasonId}&weekNo=${season.currentWeekNo}`,
           "GET",
           session
-        )) as { result: { members: { level?: unknown }[] } }
+        )) as { result: { members: { mbrId?: unknown; level?: unknown }[] } }
       ).result;
       for (const m of detail.members) {
         const level = Number(m.level);
         if (Number.isNaN(level)) continue;
-        counts.set(level, (counts.get(level) ?? 0) + 1);
+        const cohort = cohortOf(m.mbrId);
+        const key = `${cohort}|${level}`;
+        const e = counts.get(key) ?? { course, cohort, level, count: 0 };
+        e.count++;
+        counts.set(key, e);
       }
     }
 
-    return [...counts.entries()].map(([level, count]) => ({ level, count })).sort((a, b) => a.level - b.level);
+    return [...counts.values()].sort((a, b) => a.level - b.level || a.cohort.localeCompare(b.cohort));
   } catch (e) {
     console.error("실제 레벨 분포 조회 실패, 관측 스냅샷으로 폴백:", (e as Error).message);
     return null;

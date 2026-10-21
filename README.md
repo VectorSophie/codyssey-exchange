@@ -85,6 +85,10 @@ docs/                       조사 문서, 지표 카탈로그, 데이터 소스
   - 레벨 분포는 시즌의 전체 길드(`guild/season/currentSeasonDetail` → `guild/ranking/weeklyList` →
     길드별 `guild/{id}/detail`)를 순회해 만드는 실시간 집계입니다 — 각 길드 상세 응답에 회원 실명/이메일이
     포함되어 있지만 `level` 필드만 뽑고 즉시 버립니다(원본은 어디에도 저장하지 않음).
+  - 레벨 분포는 과정(올인원/네이티브)·기수(1기/2기)별로 나뉩니다. 과정은 세션 계정의 `instList[0].instNm`으로
+    판정합니다 — 길드 API는 세션 기관 소속 길드만 돌려주고 `instCd` 파라미터를 무시하므로, 한 세션으로는 그
+    계정의 과정만 집계됩니다. 기수 필드는 API에 없어(`members[].classNm` 전원 null) 회원번호 대역으로
+    추정합니다(`1000330000` 미만 1기, inferred — 2026-10-21 올인원 길드 357명 기준 대역 공백 확인).
   - 관심 과제(watchlist)는 대응하는 API를 찾지 못해 필드 자체를 없앴습니다(예전엔 항상 빈 데모 값).
   - 미션 단계별 지급 경험치(`MISSION_TIER_XP`)와 Level 4 도달 경험치는 API로 찾지 못해 여전히 사용자가
     인게임에서 직접 확인한 값(observed/unknown)입니다. Level 5 도달 경험치(8,800)는 `nextLvlRequiredExprc`로
