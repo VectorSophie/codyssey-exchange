@@ -68,6 +68,8 @@ app/                       Next.js + TypeScript 앱
   src/components/           신뢰도 배지, 증감 표시, 세션 입력 팝업 등 공용 UI
   scripts/seed-db.mjs        db/schema.sql 적용 + db/seed/*.json(초기 스냅샷)을 Postgres에 적재
   scripts/collect-live.mjs   수동 — 코디세이 API 직접 수집(과제 상태 분포 + 평가 시장)
+  scripts/analyze-participation.mjs  오프라인 분석 — 본인 크레딧 타임라인, 공개 스냅샷 집계·민감도(DATA.md 12절)
+  scripts/analyze-participation.test.mjs  위 분석의 합성 자료 테스트(`npm test`)
 db/schema.sql              quests / eval_aggregate_meta / eval_aggregate_cells / quest_completed_history 테이블 정의
 db/seed/                    커밋된 실제 데이터 스냅샷(JSON) — seed-db.mjs의 입력
 docker-compose.yml          로컬 개발용 Postgres
@@ -77,7 +79,8 @@ docs/                       조사 문서, 지표 카탈로그, 데이터 소스
 ## 알려진 한계
 
 - 실제 세션 연동 시 매핑되는 필드(전부 2026-07-30 실사용자 세션으로 검증, `lib/codyssey-client.ts`):
-  - `point/pnt/total/detail` → 레벨·경험치·포인트·다음 레벨 요구 경험치. `rest/user/info/detail`의
+  - `point/pnt/total/detail` → 레벨·경험치·포인트·다음 레벨 요구 경험치. 포인트(`pnt`)는 평가를 요청할 때 쓰고 평가해 줄 때
+    받는 평가 경제용 화폐라 경험치·레벨 같은 학습 진척 지표가 아닙니다([DATA.md](DATA.md) 12.8절). `rest/user/info/detail`의
     `instList[0].level`은 의도적으로 쓰지 않습니다 — 실사용자 검증 결과 화면 레벨 배지와 다른 값이었습니다
     (실제 Lv.4 계정에 `level: "32"`가 옴 — 다른 의미의 카운터로 추정되나 무엇인지 미확인).
   - `learning/learningProgress/status/list` → 과제별 완료(`PASS`)/진행중(`평가전`, 제출 후 평가 대기)
